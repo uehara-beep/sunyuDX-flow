@@ -1,7 +1,7 @@
 INFO:     Will watch for changes in these directories: ['/Users/ueharataku/Downloads/sunyuDX-flow/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [48390] using WatchFiles
-INFO:     Started server process [48393]
+INFO:     Started reloader process [48742] using WatchFiles
+INFO:     Started server process [48745]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:64132 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64316 - "GET /health HTTP/1.1" 200 OK

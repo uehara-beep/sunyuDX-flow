@@ -1,25 +1,25 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
-async function okOrThrow(r: Response) {
+async function ok(r: Response) {
   if (!r.ok) throw new Error(await r.text());
   return r;
 }
 
-export async function jget<T>(path: string): Promise<T> {
-  const r = await okOrThrow(await fetch(API_BASE + path));
+export async function jget<T>(p: string): Promise<T> {
+  const r = await ok(await fetch(API_BASE + p));
   return r.json();
 }
 
-export async function jpost<T = any>(path: string, body?: any): Promise<T> {
-  const r = await okOrThrow(await fetch(API_BASE + path, {
+export async function jpost<T>(p: string, b?: any): Promise<T> {
+  const r = await ok(await fetch(API_BASE + p, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: b ? JSON.stringify(b) : undefined
   }));
   return r.json();
 }
 
-export async function jdel<T = any>(path: string): Promise<T> {
-  const r = await okOrThrow(await fetch(API_BASE + path, { method: "DELETE" }));
+export async function jdel<T>(p: string): Promise<T> {
+  const r = await ok(await fetch(API_BASE + p, { method: "DELETE" }));
   return r.json();
 }
