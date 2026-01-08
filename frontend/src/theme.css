@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+:root{
+  --bg:#f4f3ef; --surface:#ffffff; --surface-soft:#faf9f7;
+  --text:#1f2933; --muted:#6b7280; --line:#e2e0db;
+  --shadow:0 10px 28px rgba(16,24,40,.10);
+
+  --blue:#1f4fd8; --blue-dark:#163fa3; --blue-soft:#e8edff;
+  --orange:#f28c28; --orange-soft:#fff1e3;
+
+  --danger-bg:#ffe1e1; --warn-bg:#fff3c4;
+  --grid-line:#d6d3cd;
+  --radius:14px; --radius-sm:10px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+}
+button,input,select{font:inherit}
+button{
+  border:1px solid var(--line); background:var(--surface);
+  padding:10px 12px; border-radius:12px; cursor:pointer;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+button:hover{transform:translateY(-1px); box-shadow:0 8px 18px rgba(16,24,40,.08)}
+.btnPrimary{background:var(--blue); border-color:var(--blue); color:#fff}
+.btnAccent{background:var(--orange); border-color:var(--orange); color:#fff}
+.input,.select{
+  border:1px solid var(--line); background:var(--surface);
+  padding:10px 12px; border-radius:12px;
+}
+.card{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.layout{display:grid; grid-template-columns:260px 1fr; min-height:100vh}
+.sidebar{background:var(--surface); border-right:1px solid var(--line); padding:16px; position:sticky; top:0; height:100vh; overflow:auto}
+.main{padding:16px}
+.topbar{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.small{font-size:13px; color:var(--muted)}
+.gridWrap{margin-top:14px; display:grid; grid-template-columns:1fr 360px; gap:14px}
+@media (max-width:1100px){.layout{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.gridWrap{grid-template-columns:1fr}}
+.excelGrid{width:100%; border:1px solid var(--grid-line); border-radius:var(--radius); overflow:hidden; background:var(--surface); box-shadow:var(--shadow)}
+.excelHeader{position:sticky; top:0; z-index:5; background:#f7f6f2; border-bottom:1px solid var(--grid-line)}
+.excelRow{display:grid; grid-template-columns:220px repeat(var(--cols), minmax(140px, 1fr))}
+.cell{border-right:1px solid var(--grid-line); border-bottom:1px solid var(--grid-line); padding:10px; min-height:64px}
+.cellHead{min-height:52px; font-weight:800}
+.leftHead{font-weight:800; background:#f7f6f2}
+.cellBody{cursor:pointer}
+.cellBody:hover{background:#f8fafc}
+.bgYellow{background:var(--warn-bg)}
+.bgRed{background:var(--danger-bg)}
+.nameChip{font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.08)}
+.nameChipEmp{background:rgba(31,79,216,.10); border-color:rgba(31,79,216,.18)}
+.nameChipSub{background:rgba(242,140,40,.14); border-color:rgba(242,140,40,.25)}
+.drawer{position:sticky; top:14px; align-self:start}
+.kv{display:grid; grid-template-columns:120px 1fr; gap:8px 10px; font-size:13px}
+.kv label{color:var(--muted)}
+.sep{height:1px; background:var(--line); margin:12px 0}
+.rowBtns{display:flex; gap:8px; flex-wrap:wrap}
