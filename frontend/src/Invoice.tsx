@@ -9,7 +9,7 @@ export default function Invoice() {
     if (!file) return
     const fd = new FormData()
     fd.append('file', file)
-    const r = await fetch('http://localhost:8000/api/invoices/upload', { method:'POST', body: fd })
+    const r = await fetch('http://localhost:8001/api/invoices/upload', { method:'POST', body: fd })
     const j = await r.json()
     setMsg('OCR失敗 → 逃げ道入力へ: ' + j.invoice_id)
   }

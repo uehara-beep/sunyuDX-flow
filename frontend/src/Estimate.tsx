@@ -10,7 +10,7 @@ export default function Estimate() {
     if (!file) return
     const fd = new FormData()
     fd.append('file', file)
-    const r = await fetch('http://localhost:8000/api/estimates/import/excel', { method:'POST', body: fd })
+    const r = await fetch('http://localhost:8001/api/estimates/import/excel', { method:'POST', body: fd })
     const j = await r.json()
     setMsg('取込完了: ' + j.estimate_id)
   }
