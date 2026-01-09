@@ -209,7 +209,7 @@ export default function App() {
             ['INVENTORY','在庫(PD)'],
             ['QUALITY','品質'],
             ['MEASURE','出来高(3D)'],
-          ] as any).map(([k,label]) => (
+          ] as [Tab, string][]).map(([k, label]) => (
             <button
               key={k}
               onClick={() => setTab(k)}
