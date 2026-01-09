@@ -79,3 +79,84 @@ def delete_assignment(schedule_id: str, assignment_id: str) -> None:
     with connect() as con:
         con.execute("DELETE FROM schedule_assignments WHERE schedule_id=? AND id=?", (schedule_id, assignment_id))
         con.commit()
+
+# =========================
+# Estimate -> Budget Import
+# =========================
+from typing import Dict
+try:
+    from pydantic import BaseModel
+except Exception:
+    BaseModel = object
+
+def ensure_estimate_tables():
+    con = connect()
+    cur = con.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS estimate_imports (
+        id TEXT PRIMARY KEY,
+        source_filename TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS estimate_items (
+        id TEXT PRIMARY KEY,
+        import_id TEXT NOT NULL,
+        row_no INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 0,
+        unit TEXT,
+        unit_price REAL NOT NULL DEFAULT 0,
+        amount REAL NOT NULL DEFAULT 0,
+        vendor TEXT,
+        note TEXT,
+        FOREIGN KEY(import_id) REFERENCES estimate_imports(id)
+    )
+    """)
+    con.commit()
+
+def calc_budget_summary(rows: List) -> Dict[str, float]:
+    totals = {"労務": 0.0, "外注": 0.0, "材料": 0.0, "機械": 0.0, "経費": 0.0, "grand_total": 0.0}
+    for r in rows:
+        cat = getattr(r, "category", "材料") or "材料"
+        amt = float(getattr(r, "amount", 0.0) or 0.0)
+        if cat not in totals:
+            totals[cat] = 0.0
+        totals[cat] += amt
+        totals["grand_total"] += amt
+    return totals
+
+def save_estimate_import(source_filename: str, rows: List) -> str:
+    import uuid, datetime
+    ensure_estimate_tables()
+    con = connect()
+    cur = con.cursor()
+    import_id = str(uuid.uuid4())
+    now = datetime.datetime.utcnow().isoformat()
+
+    cur.execute("INSERT INTO estimate_imports (id, source_filename, created_at) VALUES (?, ?, ?)",
+                (import_id, source_filename, now))
+
+    for r in rows:
+        item_id = str(uuid.uuid4())
+        cur.execute("""
+            INSERT INTO estimate_items
+            (id, import_id, row_no, name, category, quantity, unit, unit_price, amount, vendor, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            item_id,
+            import_id,
+            int(getattr(r, "row_no", 0) or 0),
+            str(getattr(r, "name", "") or ""),
+            str(getattr(r, "category", "") or "材料"),
+            float(getattr(r, "quantity", 0.0) or 0.0),
+            str(getattr(r, "unit", "") or ""),
+            float(getattr(r, "unit_price", 0.0) or 0.0),
+            float(getattr(r, "amount", 0.0) or 0.0),
+            getattr(r, "vendor", None),
+            getattr(r, "note", None),
+        ))
+    con.commit()
+    return import_id

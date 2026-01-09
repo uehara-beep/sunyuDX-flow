@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import schedule, notify
+from .routers import schedule, notify, estimate
 from .db import init_db, seed_if_empty
 
 app = FastAPI(title="sunyuDX-flow API", version="1.0.0")
@@ -20,8 +20,7 @@ def _startup():
 
 app.include_router(schedule.router)
 app.include_router(notify.router)
-app.include_router(__import__('app.routers.estimate', fromlist=['router']).router)
-app.include_router(__import__('app.routers.invoice', fromlist=['router']).router)
+app.include_router(estimate.router)
 
 @app.get("/health")
 def health():

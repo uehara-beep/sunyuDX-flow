@@ -22,3 +22,16 @@ frontend/dist/
 
 # Env
 frontend/.env
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# OS
+.DS_Store
