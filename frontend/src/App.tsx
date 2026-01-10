@@ -25,7 +25,7 @@ function truncateNames(names: string[], max = 3): { shown: string[]; more: numbe
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('SCHEDULE')
+  const [tab, setTab] = useState<Tab>('ESTIMATE')
   const [mode, setMode] = useState<ViewMode>('WEEK')
   const [anchor, setAnchor] = useState<string>(todayISO())
   const [projects, setProjects] = useState<Project[]>([])
@@ -201,8 +201,8 @@ export default function App() {
 
         <div style={{marginTop:14, display:'flex', flexDirection:'column', gap:8}}>
           {([
-            ['SCHEDULE','工程表/配置'],
             ['ESTIMATE','見積→予算'],
+            ['SCHEDULE','工程表/配置'],
             ['COST','原価/差異'],
             ['INVOICES','請求/OCR'],
             ['SUBCON','外注/注文'],
