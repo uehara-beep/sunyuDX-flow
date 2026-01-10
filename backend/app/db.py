@@ -12,11 +12,10 @@ def connect() -> sqlite3.Connection:
 
 def init_db() -> None:
     from pathlib import Path
-    schema_path = Path(__file__).resolve().parent.parent.parent / "docs" / "db_schema_sqlite.sql"
+    schema_path = Path(__file__).resolve().parent.parent / "docs" / "db_schema_sqlite.sql"
     sql = schema_path.read_text(encoding="utf-8")
     with connect() as con:
         con.executescript(sql)
-
 def seed_if_empty() -> None:
     import uuid, datetime
     with connect() as con:
