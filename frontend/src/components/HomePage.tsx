@@ -1,54 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './HomePage.css';
 
-interface DashboardStats {
-  active_projects: number;
-  profit_margin: number;
-  revenue: number;
-  alerts: number;
-}
-
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats>({
-    active_projects: 0,
-    profit_margin: 0,
-    revenue: 0,
-    alerts: 0,
-  });
-
-  useEffect(() => {
-    fetchDashboardStats();
-  }, []);
-
-  const fetchDashboardStats = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/dashboard/stats');
-
-      if (!response.ok) {
-        throw new Error('統計情報の取得に失敗しました');
-      }
-
-      const data = await response.json();
-      setStats({
-        active_projects: data.active_projects,
-        profit_margin: data.profit_margin,
-        revenue: data.revenue,
-        alerts: data.alerts,
-      });
-
-    } catch (error) {
-      console.error('ダッシュボード統計取得エラー:', error);
-      // エラー時はデフォルト値を使用
-      setStats({
-        active_projects: 23,
-        profit_margin: 18.5,
-        revenue: 125000000,
-        alerts: 2,
-      });
-    }
-  };
 
   return (
     <div className="home-container">
@@ -129,33 +84,6 @@ const HomePage: React.FC = () => {
           </p>
           <button className="card-button">使ってみる →</button>
         </div>
-
-        <div className="card" onClick={() => navigate('/cost/input')}>
-          <div className="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </div>
-          <h3 className="card-title">原価入力</h3>
-          <p className="card-description">
-            実際原価を記録。AIが自動分類して予実管理を簡単に。
-          </p>
-          <button className="card-button">入力する →</button>
-        </div>
-
-        <div className="card" onClick={() => navigate('/daily/report')}>
-          <div className="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-            </svg>
-          </div>
-          <h3 className="card-title">日報入力</h3>
-          <p className="card-description">
-            写真付きで日報を記録。進捗管理が簡単になります。
-          </p>
-          <button className="card-button">作成する →</button>
-        </div>
       </div>
 
       <div className="status-bar">
@@ -166,7 +94,7 @@ const HomePage: React.FC = () => {
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </div>
-          <div className="stat-value blue">{stats.active_projects}</div>
+          <div className="stat-value blue">23</div>
           <div className="stat-label">Active Projects</div>
         </div>
         <div className="stat">
@@ -176,7 +104,7 @@ const HomePage: React.FC = () => {
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
-          <div className="stat-value orange">{stats.profit_margin}%</div>
+          <div className="stat-value orange">18.5%</div>
           <div className="stat-label">Profit Margin</div>
         </div>
         <div className="stat">
@@ -186,7 +114,7 @@ const HomePage: React.FC = () => {
               <polyline points="17 6 23 6 23 12" />
             </svg>
           </div>
-          <div className="stat-value green">¥{(stats.revenue / 1000000).toFixed(0)}M</div>
+          <div className="stat-value green">¥125M</div>
           <div className="stat-label">Revenue</div>
         </div>
         <div className="stat">
@@ -197,7 +125,7 @@ const HomePage: React.FC = () => {
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </div>
-          <div className="stat-value red">{stats.alerts}</div>
+          <div className="stat-value red">2</div>
           <div className="stat-label">Alerts</div>
         </div>
       </div>
