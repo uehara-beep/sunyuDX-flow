@@ -1,4 +1,5 @@
 import Estimate from './Estimate'
+import EstimateUpload from './components/EstimateUpload'
 import Invoice from './Invoice'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { jget, jpost, jdel } from './api'
@@ -263,7 +264,7 @@ export default function App() {
           </div>
         )}
 
-        {tab === 'ESTIMATE' ? (<Estimate />) : tab === 'INVOICES' ? (<Invoice />) : tab !== 'SCHEDULE' ? (
+        {tab === 'ESTIMATE' ? (<EstimateUpload />) : tab === 'INVOICES' ? (<Invoice />) : tab !== 'SCHEDULE' ? (
           <div style={{marginTop:14}} className="card">
             <div style={{padding:14, borderBottom:'1px solid var(--line)', fontWeight:800}}>
               {tab}（v1: UI枠のみ）
