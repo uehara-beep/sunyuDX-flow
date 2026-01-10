@@ -9,3 +9,16 @@
   ➜  Network: http://192.168.11.41:5173/
 8:44:54 [vite] hmr update /src/Estimate.tsx
 13:10:34 [vite] hmr update /src/App.tsx
+18:59:15 [vite] hmr update /src/App.tsx
+18:59:19 [vite] hmr update /src/App.tsx
+20:08:14 [vite] hmr update /src/App.tsx
+20:08:25 [vite] hmr update /src/App.tsx
+21:52:01 [vite] hmr update /src/App.tsx
+22:01:19 [vite] hmr update /src/App.tsx
+22:13:53 [vite] hmr update /src/App.tsx
+22:21:17 [vite] hmr update /src/App.tsx
+0:37:36 [vite] vite.config.ts changed, restarting server...
+0:37:36 [vite] server restarted.
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://192.168.11.41:3000/

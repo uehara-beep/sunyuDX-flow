@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/ueharataku/Downloads/sunyuDX-flow/backend/main.py", line 18, in <module>
+    from linebot.exceptions import InvalidSignatureError
+ModuleNotFoundError: No module named 'linebot'

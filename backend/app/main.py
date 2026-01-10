@@ -1,39 +1,56 @@
-import asyncio
-asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-
+"""
+SunyuTECH 見積・予算・請求管理システム
+FastAPI メインアプリケーション
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import schedule, notify, estimate
-from .db import init_db, seed_if_empty
-import os
+from app.routers import estimate
+import logging
 
-app = FastAPI(title="sunyuDX-flow API", version="1.0.0")
+# ロギング設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-# 環境変数から許可するオリジンを取得（本番環境用）
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+logger = logging.getLogger(__name__)
 
+# FastAPIアプリケーション初期化
+app = FastAPI(
+    title="SunyuTECH 見積管理API",
+    description="見積・予算・請求書の自動生成システム",
+    version="1.0.0"
+)
+
+# CORS設定
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://sunyu-dx-flow.vercel.app",
-        *allowed_origins,  # 環境変数から追加のオリジンを許可
+        "http://localhost:3000",
+        "https://sunyudx-flow-production.up.railway.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-def _startup():
-    init_db()
-    seed_if_empty()
-
-app.include_router(schedule.router)
-app.include_router(notify.router)
+# ルーター登録
 app.include_router(estimate.router)
 
+# ヘルスチェック
+@app.get("/")
+async def root():
+    return {
+        "message": "SunyuTECH 見積管理API",
+        "version": "1.0.0",
+        "status": "running"
+    }
+
 @app.get("/health")
-def health():
-    return {"ok": True}
+async def health_check():
+    return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

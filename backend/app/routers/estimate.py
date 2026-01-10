@@ -1,150 +1,331 @@
+"""
+見積API
+見積・予算・請求の作成、アップロード、生成機能を提供
+"""
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-import io
-import pandas as pd
-from .. import repo
+from fastapi.responses import FileResponse
+from app.models.estimate import (
+    Estimate, EstimateCreate, ParsedEstimateData, GenerateResponse,
+    EstimateItem, EstimateDetail
+)
+from app.utils.excel_parser import ExcelParser
+from app.utils.kakusa_generator import KakusaExcelGenerator
+from app.utils.pdf_converter import convert_excel_to_pdf, recalculate_formulas
+from app.utils.number_generator import NumberGenerator
+from app.utils.estimate_db import EstimateDB
+import os
+import uuid
+import shutil
+from datetime import datetime
+from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/estimate", tags=["estimate"])
 
-# ---- response models ----
-class BudgetRow(BaseModel):
-    row_no: int
-    name: str
-    category: str  # 労務/外注/材料/機械/経費
-    quantity: float
-    unit: str
-    unit_price: float
-    amount: float
-    vendor: Optional[str] = None
-    note: Optional[str] = None
+# パス設定
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+UPLOAD_DIR = BASE_DIR / "uploads"
+OUTPUT_DIR = BASE_DIR / "outputs"
+DB_PATH = str(BASE_DIR / "sunyuDX.db")
 
-class ImportResult(BaseModel):
-    source_filename: str
-    rows: List[BudgetRow]
-    summary: Dict[str, float]  # category totals + grand_total
+# ディレクトリが存在しない場合は作成
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-def _norm(s: Any) -> str:
-    if s is None:
-        return ""
-    return str(s).strip()
+# ユーティリティ初期化
+number_gen = NumberGenerator(DB_PATH)
+estimate_db = EstimateDB(DB_PATH)
 
-def _to_float(x: Any) -> float:
-    if x is None:
-        return 0.0
-    if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip()
-    if s == "":
-        return 0.0
-    s = s.replace(",", "").replace("¥", "").replace("円", "")
+
+@router.post("/upload", response_model=ParsedEstimateData)
+async def upload_estimate(file: UploadFile = File(...)):
+    """
+    見積Excelファイルをアップロードして解析
+    
+    Args:
+        file: アップロードファイル
+    
+    Returns:
+        ParsedEstimateData: 解析されたデータ
+    """
     try:
-        return float(s)
-    except:
-        return 0.0
+        # ファイル保存
+        file_id = str(uuid.uuid4())
+        file_ext = os.path.splitext(file.filename)[1]
+        temp_path = UPLOAD_DIR / f"temp_{file_id}{file_ext}"
+        
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        logger.info(f"ファイルアップロード: {file.filename}")
+        
+        # Excel解析
+        parser = ExcelParser(str(temp_path))
+        parsed_data = parser.parse()
+        parser.close()
+        
+        # 一時ファイル削除
+        # os.remove(temp_path)  # デバッグ時はコメントアウト
+        
+        return parsed_data
+        
+    except Exception as e:
+        logger.error(f"アップロードエラー: {e}")
+        raise HTTPException(status_code=500, detail=f"アップロードエラー: {str(e)}")
 
-CATEGORY_ALIASES = {
-    "労務": ["労務", "労務費", "labor"],
-    "外注": ["外注", "外注費", "協力", "下請", "subcontract"],
-    "材料": ["材料", "材料費", "資材", "material"],
-    "機械": ["機械", "機械費", "レンタル", "重機", "machine"],
-    "経費": ["経費", "雑費", "交通費", "燃料", "etc", "expense"],
-}
 
-def _guess_category(v: str) -> str:
-    v = v.strip()
-    if v == "":
-        return "材料"
-    low = v.lower()
-    for cat, keys in CATEGORY_ALIASES.items():
-        for k in keys:
-            if k.lower() in low:
-                return cat
-    # already exact?
-    if v in CATEGORY_ALIASES.keys():
-        return v
-    return "材料"
-
-def _find_col(cols, candidates):
-    lowcols = {c.lower(): c for c in cols}
-    for cand in candidates:
-        c = cand.lower()
-        if c in lowcols:
-            return lowcols[c]
-    # partial match
-    for col in cols:
-        l = col.lower()
-        for cand in candidates:
-            if cand.lower() in l:
-                return col
-    return None
-
-def _read_excel_to_rows(content: bytes) -> List[BudgetRow]:
-    # read first sheet
-    xls = pd.ExcelFile(io.BytesIO(content))
-    sheet_name = xls.sheet_names[0]
-    df = pd.read_excel(xls, sheet_name=sheet_name)
-
-    # normalize column names
-    df.columns = [str(c).strip() for c in df.columns]
-
-    # detect columns (supports Japanese/English)
-    c_name = _find_col(df.columns, ["項目", "名称", "品名", "工種", "作業内容", "name", "item"])
-    c_cat  = _find_col(df.columns, ["区分", "分類", "カテゴリ", "費目", "category"])
-    c_qty  = _find_col(df.columns, ["数量", "qty", "quantity"])
-    c_unit = _find_col(df.columns, ["単位", "unit"])
-    c_up   = _find_col(df.columns, ["単価", "unit_price", "price"])
-    c_amt  = _find_col(df.columns, ["金額", "合計", "amount", "total"])
-    c_vend = _find_col(df.columns, ["業者", "会社", "発注先", "vendor", "supplier"])
-    c_note = _find_col(df.columns, ["備考", "メモ", "note", "memo"])
-
-    if not c_name:
-        raise HTTPException(status_code=400, detail="Excelに「項目/名称/name」列が見つかりません。見積の明細シートを入れてください。")
-
-    rows: List[BudgetRow] = []
-    for i, r in df.iterrows():
-        name = _norm(r.get(c_name))
-        if name == "" or name.lower() in ["nan", "none"]:
-            continue
-
-        category = _guess_category(_norm(r.get(c_cat))) if c_cat else "材料"
-        qty = _to_float(r.get(c_qty)) if c_qty else 0.0
-        unit = _norm(r.get(c_unit)) if c_unit else ""
-        unit_price = _to_float(r.get(c_up)) if c_up else 0.0
-        amount = _to_float(r.get(c_amt)) if c_amt else 0.0
-
-        # If amount missing but qty & unit_price present
-        if amount == 0.0 and qty != 0.0 and unit_price != 0.0:
-            amount = qty * unit_price
-
-        vendor = _norm(r.get(c_vend)) if c_vend else None
-        note = _norm(r.get(c_note)) if c_note else None
-
-        rows.append(BudgetRow(
-            row_no=len(rows) + 1,
-            name=name,
-            category=category,
-            quantity=qty,
-            unit=unit,
-            unit_price=unit_price,
-            amount=amount,
-            vendor=vendor if vendor else None,
-            note=note if note else None
-        ))
-    return rows
-
-@router.post("/import", response_model=ImportResult)
-async def import_estimate(file: UploadFile = File(...)):
-    if not (file.filename.endswith(".xlsx") or file.filename.endswith(".xls")):
-        raise HTTPException(status_code=400, detail="Excel（.xlsx/.xls）のみ対応です。PDFは次フェーズでOCRに回します。")
-    content = await file.read()
+@router.post("/generate", response_model=GenerateResponse)
+async def generate_kakusa(file: UploadFile = File(...)):
+    """
+    見積ExcelをアップロードしてKAKUSA形式を生成
+    
+    Args:
+        file: アップロードファイル
+    
+    Returns:
+        GenerateResponse: 生成結果
+    """
     try:
-        rows = _read_excel_to_rows(content)
-        repo.ensure_estimate_tables()
-        import_id = repo.save_estimate_import(file.filename, rows)  # keep for audit
-        summary = repo.calc_budget_summary(rows)
-        return ImportResult(source_filename=file.filename, rows=rows, summary=summary)
+        # 1. ファイル保存
+        file_id = str(uuid.uuid4())
+        file_ext = os.path.splitext(file.filename)[1]
+        source_path = UPLOAD_DIR / f"source_{file_id}{file_ext}"
+        
+        with open(source_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        logger.info(f"ファイルアップロード: {file.filename}")
+        
+        # 2. Excel解析
+        parser = ExcelParser(str(source_path))
+        parsed_data = parser.parse()
+        parser.close()
+        
+        # 3. 見積番号生成
+        estimate_number = number_gen.generate_estimate_number()
+        estimate_id = str(uuid.uuid4())
+        estimate_date = datetime.now().strftime('%Y年%m月%d日')
+        
+        # 4. 見積データ作成
+        estimate = Estimate(
+            id=estimate_id,
+            estimate_number=estimate_number,
+            estimate_date=estimate_date,
+            customer_name=parsed_data.customer_name,
+            project_name=parsed_data.project_name,
+            project_location=parsed_data.project_location,
+            project_period_from=None,
+            project_period_to=None,
+            valid_period=parsed_data.valid_period or "3ヵ月",
+            payment_terms=parsed_data.payment_terms or "出来高現金払 現金100％",
+            waste_notice=parsed_data.waste_notice,
+            special_notes=parsed_data.special_notes,
+            staff_name=parsed_data.staff_name or "上原 拓",
+            subtotal=parsed_data.subtotal,
+            tax_rate=0.1,
+            tax_amount=parsed_data.tax_amount,
+            total_amount=parsed_data.total_amount,
+            status='draft',
+            source_file_path=str(source_path),
+            created_at=datetime.now().isoformat(),
+            updated_at=datetime.now().isoformat(),
+            items=parsed_data.items,
+            details=parsed_data.details
+        )
+        
+        # 5. データベース保存
+        estimate_db.create_estimate(estimate)
+        logger.info(f"見積保存: {estimate_number}")
+        
+        # 6. 会社マスタ取得
+        company = estimate_db.get_company('company_001')
+        if not company:
+            raise HTTPException(status_code=500, detail="会社マスタが見つかりません")
+        
+        # 7. KAKUSA形式Excel生成
+        excel_filename = f"{estimate_number}_KAKUSA.xlsx"
+        excel_path = OUTPUT_DIR / excel_filename
+        
+        generator = KakusaExcelGenerator(company)
+        generator.generate(estimate, str(excel_path))
+        logger.info(f"KAKUSA Excel生成: {excel_path}")
+        
+        # 8. 数式再計算
+        if not recalculate_formulas(str(excel_path)):
+            logger.warning("数式再計算に失敗しました")
+        
+        # 9. PDF変換
+        pdf_filename = f"{estimate_number}_KAKUSA.pdf"
+        pdf_path = OUTPUT_DIR / pdf_filename
+        
+        if not convert_excel_to_pdf(str(excel_path), str(pdf_path)):
+            logger.warning("PDF変換に失敗しました")
+        
+        return GenerateResponse(
+            success=True,
+            estimate_id=estimate_id,
+            estimate_number=estimate_number,
+            excel_path=str(excel_path),
+            pdf_path=str(pdf_path),
+            message=f"KAKUSA形式の見積を生成しました: {estimate_number}"
+        )
+        
+    except Exception as e:
+        logger.error(f"生成エラー: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"生成エラー: {str(e)}")
+
+
+@router.get("/list")
+async def list_estimates(limit: int = 100, offset: int = 0):
+    """
+    見積一覧を取得
+    
+    Args:
+        limit: 取得件数
+        offset: オフセット
+    
+    Returns:
+        List[Estimate]: 見積リスト
+    """
+    try:
+        estimates = estimate_db.list_estimates(limit, offset)
+        return {"estimates": estimates, "total": len(estimates)}
+        
+    except Exception as e:
+        logger.error(f"一覧取得エラー: {e}")
+        raise HTTPException(status_code=500, detail=f"一覧取得エラー: {str(e)}")
+
+
+@router.get("/{estimate_id}")
+async def get_estimate(estimate_id: str):
+    """
+    見積詳細を取得
+    
+    Args:
+        estimate_id: 見積ID
+    
+    Returns:
+        Estimate: 見積データ
+    """
+    try:
+        estimate = estimate_db.get_estimate(estimate_id)
+        
+        if not estimate:
+            raise HTTPException(status_code=404, detail="見積が見つかりません")
+        
+        return estimate
+        
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"見積Excel取込エラー: {str(e)}")
+        logger.error(f"見積取得エラー: {e}")
+        raise HTTPException(status_code=500, detail=f"見積取得エラー: {str(e)}")
+
+
+@router.get("/download/excel/{estimate_number}")
+async def download_excel(estimate_number: str):
+    """
+    Excelファイルをダウンロード
+    
+    Args:
+        estimate_number: 見積番号
+    
+    Returns:
+        FileResponse: Excelファイル
+    """
+    try:
+        excel_path = OUTPUT_DIR / f"{estimate_number}_KAKUSA.xlsx"
+        
+        if not excel_path.exists():
+            raise HTTPException(status_code=404, detail="ファイルが見つかりません")
+        
+        return FileResponse(
+            path=str(excel_path),
+            filename=excel_path.name,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ダウンロードエラー: {e}")
+        raise HTTPException(status_code=500, detail=f"ダウンロードエラー: {str(e)}")
+
+
+@router.get("/download/pdf/{estimate_number}")
+async def download_pdf(estimate_number: str):
+    """
+    PDFファイルをダウンロード
+    
+    Args:
+        estimate_number: 見積番号
+    
+    Returns:
+        FileResponse: PDFファイル
+    """
+    try:
+        pdf_path = OUTPUT_DIR / f"{estimate_number}_KAKUSA.pdf"
+        
+        if not pdf_path.exists():
+            raise HTTPException(status_code=404, detail="ファイルが見つかりません")
+        
+        return FileResponse(
+            path=str(pdf_path),
+            filename=pdf_path.name,
+            media_type="application/pdf"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ダウンロードエラー: {e}")
+        raise HTTPException(status_code=500, detail=f"ダウンロードエラー: {str(e)}")
+
+
+@router.get("/company")
+async def get_company():
+    """
+    会社マスタを取得
+    
+    Returns:
+        CompanyMaster: 会社マスタ
+    """
+    try:
+        company = estimate_db.get_company('company_001')
+        
+        if not company:
+            raise HTTPException(status_code=404, detail="会社マスタが見つかりません")
+        
+        return company
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"会社マスタ取得エラー: {e}")
+        raise HTTPException(status_code=500, detail=f"会社マスタ取得エラー: {str(e)}")
+
+
+@router.put("/company")
+async def update_company(company: dict):
+    """
+    会社マスタを更新
+    
+    Args:
+        company: 会社マスタ
+    
+    Returns:
+        dict: 更新結果
+    """
+    try:
+        from app.models.estimate import CompanyMaster
+        
+        company_data = CompanyMaster(**company)
+        estimate_db.update_company(company_data)
+        
+        return {"success": True, "message": "会社マスタを更新しました"}
+        
+    except Exception as e:
+        logger.error(f"会社マスタ更新エラー: {e}")
+        raise HTTPException(status_code=500, detail=f"会社マスタ更新エラー: {str(e)}")
