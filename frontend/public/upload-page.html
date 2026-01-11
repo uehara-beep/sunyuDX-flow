@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>見積書アップロード - sunyuTECH-DX</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #E8E4DF;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    /* ヘッダー */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: transparent;
+    }
+    
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .back-btn:hover {
+      background: #f5f5f5;
+      transform: translateX(-2px);
+    }
+    
+    .header-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0a2540;
+    }
+    
+    .user-btn {
+      width: 56px;
+      height: 56px;
+      background: #0a2540;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .user-btn:hover {
+      background: #0d3a5c;
+      transform: scale(1.05);
+    }
+    
+    /* メインカード */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 40px 32px;
+    }
+    
+    .upload-card {
+      background: #0a2540;
+      border-radius: 24px;
+      padding: 80px 60px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    
+    .card-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 20px;
+    }
+    
+    /* ドラッグ&ドロップエリア */
+    .dropzone {
+      border: 3px dashed rgba(255,107,0,0.5);
+      border-radius: 16px;
+      padding: 100px 40px;
+      margin: 40px 0;
+      background: rgba(255,107,0,0.03);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: #FF6B00;
+      background: rgba(255,107,0,0.08);
+      transform: translateY(-2px);
+    }
+    
+    .dropzone-icon {
+      font-size: 72px;
+      margin-bottom: 24px;
+    }
+    
+    .dropzone-text {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 12px;
+    }
+    
+    .dropzone-subtext {
+      font-size: 16px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+    
+    .dropzone-formats {
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+    }
+    
+    /* ファイル選択済み表示 */
+    .file-selected {
+      display: none;
+      background: rgba(34,197,94,0.1);
+      border: 2px solid rgba(34,197,94,0.3);
+      border-radius: 16px;
+      padding: 32px;
+      margin: 40px 0;
+    }
+    
+    .file-selected.show {
+      display: block;
+    }
+    
+    .file-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .file-icon {
+      font-size: 48px;
+    }
+    
+    .file-details {
+      text-align: left;
+    }
+    
+    .file-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 4px;
+    }
+    
+    .file-meta {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+    }
+    
+    .sheet-preview {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    
+    .sheet-badge {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+    }
+    
+    /* アップロードボタン */
+    .upload-btn {
+      width: 100%;
+      max-width: 600px;
+      padding: 24px;
+      background: linear-gradient(135deg, #8B7355 0%, #6B5444 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 0 auto;
+    }
+    
+    .upload-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(139,115,85,0.4);
+    }
+    
+    .upload-btn:active {
+      transform: translateY(0);
+    }
+    
+    /* 次へ進むボタン */
+    .next-btn {
+      width: 100%;
+      max-width: 600px;
+      padding: 24px;
+      background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 0 auto;
+    }
+    
+    .next-btn.show {
+      display: flex;
+    }
+    
+    .next-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255,107,0,0.4);
+    }
+    
+    .next-btn:active {
+      transform: translateY(0);
+    }
+    
+    /* ローディング */
+    .loading {
+      display: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    
+    .loading.show {
+      display: block;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <button class="back-btn" onclick="window.history.back()">
+      ← 営業部屋
+    </button>
+    <h1 class="header-title">見積書アップロード</h1>
+    <button class="user-btn">たく</button>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <div class="container">
+    <div class="upload-card">
+      <h2 class="card-title">見積Excelをアップロード</h2>
+      
+      <!-- ドラッグ&ドロップエリア -->
+      <div id="dropzone" class="dropzone">
+        <div class="dropzone-icon">⬆️</div>
+        <div class="dropzone-text">ファイルをドラッグ&ドロップ</div>
+        <div class="dropzone-subtext">または クリックして選択</div>
+        <div class="dropzone-formats">.xlsx, .xls 形式対応</div>
+      </div>
+      
+      <!-- ファイル選択済み表示 -->
+      <div id="fileSelected" class="file-selected">
+        <div class="file-info">
+          <div class="file-icon">📊</div>
+          <div class="file-details">
+            <div class="file-name" id="fileName">ファイル名</div>
+            <div class="file-meta">
+              <span id="fileSize">0 KB</span> • 
+              <span id="sheetCount">0 シート</span>
+            </div>
+          </div>
+        </div>
+        <div id="sheetPreview" class="sheet-preview"></div>
+      </div>
+      
+      <!-- ローディング表示 -->
+      <div id="loading" class="loading">
+        読み込み中...
+      </div>
+      
+      <!-- アップロードボタン -->
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+      <button id="uploadBtn" class="upload-btn">
+        <span style="font-size: 24px;">📤</span>
+        アップロード
+      </button>
+      
+      <!-- 次へ進むボタン -->
+      <button id="nextBtn" class="next-btn">
+        実行予算書作成へ進む →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let excelData = null;
+    let uploadedFile = null;
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const dropzone = document.getElementById('dropzone');
+    const fileSelected = document.getElementById('fileSelected');
+    const loading = document.getElementById('loading');
+
+    // アップロードボタンクリック
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // ドロップゾーンクリック
+    dropzone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // ファイル選択
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleFile(file);
+      }
+    });
+
+    // ドラッグ&ドロップ
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+        handleFile(file);
+      }
+    });
+
+    // ファイル処理
+    function handleFile(file) {
+      // ファイルサイズチェック（10MB制限）
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert('ファイルサイズが大きすぎます。\n10MB以下のファイルをアップロードしてください。');
+        dropzone.classList.remove('hidden');
+        return;
+      }
+
+      // ファイル形式チェック
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel' // .xls
+      ];
+      if (file.type && !allowedTypes.includes(file.type)) {
+        alert('Excelファイル（.xlsx, .xls）のみアップロード可能です。');
+        dropzone.classList.remove('hidden');
+        return;
+      }
+
+      // 拡張子チェック（MIMEタイプが取れない場合のフォールバック）
+      const fileName = file.name.toLowerCase();
+      if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+        alert('Excelファイル（.xlsx, .xls）のみアップロード可能です。');
+        dropzone.classList.remove('hidden');
+        return;
+      }
+
+      uploadedFile = file;
+      loading.classList.add('show');
+      dropzone.classList.add('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          excelData = {
+            workbook: workbook,
+            fileName: file.name,
+            fileSize: (file.size / 1024).toFixed(1),
+            sheetNames: workbook.SheetNames
+          };
+
+          displayFileInfo();
+          loading.classList.remove('show');
+          fileSelected.classList.add('show');
+          nextBtn.classList.add('show');
+        } catch (error) {
+          alert('ファイルの読み込みに失敗しました: ' + error.message);
+          loading.classList.remove('show');
+          dropzone.classList.remove('hidden');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ファイル情報表示
+    function displayFileInfo() {
+      document.getElementById('fileName').textContent = excelData.fileName;
+      document.getElementById('fileSize').textContent = excelData.fileSize + ' KB';
+      document.getElementById('sheetCount').textContent = excelData.sheetNames.length + ' シート';
+
+      const previewContainer = document.getElementById('sheetPreview');
+      previewContainer.innerHTML = '';
+      
+      excelData.sheetNames.forEach(name => {
+        const badge = document.createElement('div');
+        badge.className = 'sheet-badge';
+        badge.textContent = name;
+        previewContainer.appendChild(badge);
+      });
+    }
+
+    // 次へ進むボタン
+    nextBtn.addEventListener('click', () => {
+      // ExcelデータをsessionStorageに保存（タブを閉じたら自動削除）
+      try {
+        const dataToStore = {
+          fileName: excelData.fileName,
+          fileSize: excelData.fileSize,
+          sheetNames: excelData.sheetNames,
+          sheets: {}
+        };
+
+        // 各シートのデータを保存
+        excelData.sheetNames.forEach(sheetName => {
+          const worksheet = excelData.workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+          dataToStore.sheets[sheetName] = jsonData;
+        });
+
+        sessionStorage.setItem('uploadedExcelData', JSON.stringify(dataToStore));
+        
+        // 実行予算書作成ページへ遷移
+        window.location.href = 'budget-creation.html';
+      } catch (error) {
+        alert('データの保存に失敗しました: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

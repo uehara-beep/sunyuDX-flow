@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダッシュボード - sunyuTECH-DX</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #E8E4DF;
+      color: #2D2D2D;
+      min-height: 100vh;
+    }
+
+    /* ヘッダー */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.7);
+      text-decoration: none;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1D1D1F;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .period-select {
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .btn-refresh {
+      padding: 8px 16px;
+      background: #0a2540;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .last-updated {
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+    }
+
+    .user-badge {
+      padding: 8px 16px;
+      background: #0a2540;
+      border-radius: 50px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+      padding: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* KPIカード */
+    .kpi-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .kpi-icon.projects { background: rgba(59,130,246,0.1); }
+    .kpi-icon.estimate { background: rgba(255,107,0,0.1); }
+    .kpi-icon.budget { background: rgba(16,185,129,0.1); }
+    .kpi-icon.profit { background: rgba(139,92,246,0.1); }
+
+    .kpi-change {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .kpi-change.positive {
+      background: rgba(16,185,129,0.1);
+      color: #10b981;
+    }
+
+    .kpi-change.negative {
+      background: rgba(239,68,68,0.1);
+      color: #ef4444;
+    }
+
+    .kpi-label {
+      font-size: 13px;
+      color: rgba(0,0,0,0.5);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1D1D1F;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+      margin-top: 4px;
+    }
+
+    /* チャートグリッド */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .chart-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .chart-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1D1D1F;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.5);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+
+    /* アラートカード */
+    .alert-section {
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1D1D1F;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-badge {
+      padding: 2px 10px;
+      background: #ef4444;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .alert-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .alert-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      border-left: 4px solid #ef4444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .alert-card.warning {
+      border-left-color: #f59e0b;
+    }
+
+    .alert-card.info {
+      border-left-color: #3b82f6;
+    }
+
+    .alert-type {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #ef4444;
+      margin-bottom: 4px;
+    }
+
+    .alert-card.warning .alert-type { color: #f59e0b; }
+    .alert-card.info .alert-type { color: #3b82f6; }
+
+    .alert-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .alert-desc {
+      font-size: 13px;
+      color: rgba(0,0,0,0.5);
+    }
+
+    /* アクティビティ */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .activity-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      background: rgba(255,107,0,0.1);
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .activity-meta {
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+    }
+
+    .activity-time {
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+      white-space: nowrap;
+    }
+
+    /* ランキング */
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.02);
+      border-radius: 10px;
+    }
+
+    .ranking-position {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #0a2540;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .ranking-position.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+    .ranking-position.silver { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+    .ranking-position.bronze { background: linear-gradient(135deg, #d97706, #b45309); }
+
+    .ranking-info {
+      flex: 1;
+    }
+
+    .ranking-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .ranking-sub {
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+    }
+
+    .ranking-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FF6B00;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 1200px) {
+      .kpi-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+      .alert-grid {
+        grid-template-columns: 1fr;
+      }
+      .bottom-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .kpi-cards {
+        grid-template-columns: 1fr;
+      }
+      .header-actions {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="page-header">
+    <div class="header-left">
+      <a href="budget-list.html" class="back-btn">← 戻る</a>
+      <h1 class="page-title">📊 ダッシュボード</h1>
+    </div>
+    <div class="header-actions">
+      <select class="period-select" id="periodSelect" onchange="updatePeriod()">
+        <option value="this_month">今月</option>
+        <option value="this_quarter" selected>今四半期</option>
+        <option value="this_year">今年</option>
+      </select>
+      <button class="btn-refresh" onclick="refreshData()">
+        🔄 更新
+      </button>
+      <span class="last-updated" id="lastUpdated">最終更新: --</span>
+      <div class="user-badge">たく</div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <div class="main-content">
+    <!-- KPIカード -->
+    <div class="kpi-cards">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon projects">📊</div>
+          <div class="kpi-change positive">↑ +5件</div>
+        </div>
+        <div class="kpi-label">総案件数</div>
+        <div class="kpi-value" id="kpiProjects">45件</div>
+        <div class="kpi-sub">前月: 40件</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon estimate">💰</div>
+          <div class="kpi-change positive">↑ +12.5%</div>
+        </div>
+        <div class="kpi-label">総見積金額</div>
+        <div class="kpi-value" id="kpiEstimate">¥5.6億</div>
+        <div class="kpi-sub">前月: ¥5.0億</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon budget">📝</div>
+          <div class="kpi-change positive">↑ +10.2%</div>
+        </div>
+        <div class="kpi-label">総実行予算額</div>
+        <div class="kpi-value" id="kpiBudget">¥4.4億</div>
+        <div class="kpi-sub">前月: ¥4.0億</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon profit">📈</div>
+          <div class="kpi-change negative">↓ -1.2%</div>
+        </div>
+        <div class="kpi-label">平均粗利率</div>
+        <div class="kpi-value" id="kpiProfit">20.9%</div>
+        <div class="kpi-sub">前月: 22.1%</div>
+      </div>
+    </div>
+
+    <!-- チャートグリッド -->
+    <div class="chart-grid">
+      <!-- 月次推移 -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">月次推移</h3>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #FF6B00;"></div>
+              見積金額
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #0a2540;"></div>
+              実行予算額
+            </div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="monthlyTrendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 科目別集計 -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">科目別集計</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="categoryPieChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 粗利率分布 -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">粗利率分布</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="profitDistChart"></canvas>
+        </div>
+      </div>
+
+      <!-- ステータス別 -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">ステータス別件数</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- アラート -->
+    <div class="alert-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          ⚠️ アラート
+          <span class="alert-badge">3</span>
+        </h2>
+      </div>
+      <div class="alert-grid">
+        <div class="alert-card">
+          <div class="alert-type">粗利率低下</div>
+          <div class="alert-title">福岡環状線工事</div>
+          <div class="alert-desc">粗利率が8.5%で基準値を下回っています</div>
+        </div>
+        <div class="alert-card warning">
+          <div class="alert-type">承認遅延</div>
+          <div class="alert-title">北九州舗装工事</div>
+          <div class="alert-desc">承認待ち5日経過（3日以上）</div>
+        </div>
+        <div class="alert-card info">
+          <div class="alert-type">期限接近</div>
+          <div class="alert-title">長崎自動車道工事</div>
+          <div class="alert-desc">見積提出期限まであと2日</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 下部グリッド -->
+    <div class="bottom-grid">
+      <!-- 最近のアクティビティ -->
+      <div class="activity-card">
+        <div class="chart-header">
+          <h3 class="chart-title">最近のアクティビティ</h3>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon">📝</div>
+            <div class="activity-content">
+              <div class="activity-title">長崎自動車道舗装補修工事を作成</div>
+              <div class="activity-meta">たく</div>
+            </div>
+            <div class="activity-time">15分前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">✅</div>
+            <div class="activity-content">
+              <div class="activity-title">熊本県道整備工事を承認</div>
+              <div class="activity-meta">山田部長</div>
+            </div>
+            <div class="activity-time">1時間前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">📤</div>
+            <div class="activity-content">
+              <div class="activity-title">福岡環状線工事の承認申請</div>
+              <div class="activity-meta">山田</div>
+            </div>
+            <div class="activity-time">2時間前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">📊</div>
+            <div class="activity-content">
+              <div class="activity-title">佐賀空港工事をエクスポート</div>
+              <div class="activity-meta">たく</div>
+            </div>
+            <div class="activity-time">3時間前</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">❌</div>
+            <div class="activity-content">
+              <div class="activity-title">小規模修繕工事を却下</div>
+              <div class="activity-meta">鈴木役員</div>
+            </div>
+            <div class="activity-time">昨日</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 顧客別TOP5 -->
+      <div class="activity-card">
+        <div class="chart-header">
+          <h3 class="chart-title">顧客別売上TOP5</h3>
+        </div>
+        <div class="ranking-list">
+          <div class="ranking-item">
+            <div class="ranking-position gold">1</div>
+            <div class="ranking-info">
+              <div class="ranking-name">NEXCO西日本</div>
+              <div class="ranking-sub">12件</div>
+            </div>
+            <div class="ranking-value">¥1.25億</div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position silver">2</div>
+            <div class="ranking-info">
+              <div class="ranking-name">NEXCO九州</div>
+              <div class="ranking-sub">8件</div>
+            </div>
+            <div class="ranking-value">¥9,800万</div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position bronze">3</div>
+            <div class="ranking-info">
+              <div class="ranking-name">福岡市道路管理課</div>
+              <div class="ranking-sub">6件</div>
+            </div>
+            <div class="ranking-value">¥7,500万</div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position">4</div>
+            <div class="ranking-info">
+              <div class="ranking-name">熊本県土木部</div>
+              <div class="ranking-sub">5件</div>
+            </div>
+            <div class="ranking-value">¥6,200万</div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position">5</div>
+            <div class="ranking-info">
+              <div class="ranking-name">佐賀県空港管理課</div>
+              <div class="ranking-sub">3件</div>
+            </div>
+            <div class="ranking-value">¥4,500万</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // グローバル変数
+    let charts = {};
+
+    // 初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      initCharts();
+      updateLastUpdated();
+    });
+
+    // チャート初期化
+    function initCharts() {
+      // 月次推移チャート
+      const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+      charts.monthly = new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+          labels: ['7月', '8月', '9月', '10月', '11月', '12月', '1月'],
+          datasets: [
+            {
+              label: '見積金額',
+              data: [120, 135, 110, 145, 130, 155, 140],
+              borderColor: '#FF6B00',
+              backgroundColor: 'rgba(255,107,0,0.1)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: '実行予算額',
+              data: [95, 105, 88, 115, 105, 122, 112],
+              borderColor: '#0a2540',
+              backgroundColor: 'rgba(10,37,64,0.1)',
+              fill: true,
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: (value) => '¥' + value + '百万'
+              }
+            }
+          }
+        }
+      });
+
+      // 科目別円グラフ
+      const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+      charts.category = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['労務費', '外注費', '材料費', '機械費', '経費'],
+          datasets: [{
+            data: [89, 223, 67, 45, 21],
+            backgroundColor: [
+              '#3b82f6',
+              '#8b5cf6',
+              '#10b981',
+              '#f59e0b',
+              '#ef4444'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
+        }
+      });
+
+      // 粗利率分布
+      const profitCtx = document.getElementById('profitDistChart').getContext('2d');
+      charts.profit = new Chart(profitCtx, {
+        type: 'bar',
+        data: {
+          labels: ['0-10%', '10-20%', '20-30%', '30%+'],
+          datasets: [{
+            label: '件数',
+            data: [3, 12, 25, 5],
+            backgroundColor: [
+              '#ef4444',
+              '#f59e0b',
+              '#10b981',
+              '#3b82f6'
+            ],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 5 }
+            }
+          }
+        }
+      });
+
+      // ステータス別
+      const statusCtx = document.getElementById('statusChart').getContext('2d');
+      charts.status = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['下書き', '部長承認待ち', '役員承認待ち', '承認済み'],
+          datasets: [{
+            data: [8, 5, 3, 29],
+            backgroundColor: [
+              '#6b7280',
+              '#f59e0b',
+              '#8b5cf6',
+              '#10b981'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
+        }
+      });
+    }
+
+    // 期間変更
+    function updatePeriod() {
+      // データ更新（ダミー）
+      refreshData();
+    }
+
+    // データ更新
+    function refreshData() {
+      // アニメーション効果
+      document.querySelectorAll('.kpi-value').forEach(el => {
+        el.style.opacity = '0.5';
+        setTimeout(() => {
+          el.style.opacity = '1';
+        }, 300);
+      });
+
+      // チャート更新（ダミー）
+      updateLastUpdated();
+    }
+
+    // 最終更新時刻
+    function updateLastUpdated() {
+      const now = new Date();
+      document.getElementById('lastUpdated').textContent =
+        '最終更新: ' + now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    }
+  </script>
+</body>
+</html>

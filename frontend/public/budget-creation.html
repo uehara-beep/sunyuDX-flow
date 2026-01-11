@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>実行予算書作成 - sunyuTECH-DX</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #E8E4DF;
+      color: #2D2D2D;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* バナー */
+    .banner {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      padding: 16px 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transition: top 0.3s ease;
+      max-width: 90%;
+    }
+
+    .banner.show {
+      top: 20px;
+    }
+
+    .banner.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+
+    .banner.success {
+      background: #d1fae5;
+      border: 1px solid #22c55e;
+      color: #065f46;
+    }
+
+    .banner-icon {
+      font-size: 18px;
+    }
+
+    /* ヘッダー */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.6);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: rgba(0,0,0,0.08);
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1D1D1F;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .save-btn {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #FF6B00, #FF8C00);
+      border: none;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(255,107,0,0.3);
+    }
+
+    .save-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255,107,0,0.4);
+    }
+
+    .user-badge {
+      padding: 8px 16px;
+      background: #0a2540;
+      border-radius: 50px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+      padding: 24px;
+    }
+
+    /* 科目別集計パネル */
+    .summary-panel {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      border-left: 4px solid #ccc;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .summary-card.labor { border-left-color: #3b82f6; }
+    .summary-card.outsource { border-left-color: #8b5cf6; }
+    .summary-card.material { border-left-color: #22c55e; }
+    .summary-card.equipment { border-left-color: #eab308; }
+    .summary-card.expense { border-left-color: #ef4444; }
+
+    .summary-label {
+      font-size: 12px;
+      color: rgba(0,0,0,0.5);
+      margin-bottom: 8px;
+    }
+
+    .summary-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1D1D1F;
+    }
+
+    /* 粗利パネル */
+    .profit-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .profit-card {
+      background: #0a2540;
+      border-radius: 12px;
+      padding: 20px;
+      color: #fff;
+      text-align: center;
+    }
+
+    .profit-card.highlight {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+
+    .profit-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+
+    .profit-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .profit-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* ダークカード */
+    .dark-card {
+      background: #0a2540;
+      border-radius: 16px;
+      color: #fff;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    /* サイドバーレイアウト */
+    .layout-sidebar {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 600px;
+    }
+
+    .sidebar {
+      background: #0d1f35;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      padding: 20px 0;
+    }
+
+    .sidebar-header {
+      padding: 0 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 16px;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .sheet-count {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .sheet-list {
+      list-style: none;
+    }
+
+    .sheet-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .sheet-item:hover {
+      background: rgba(255,255,255,0.03);
+      color: #fff;
+    }
+
+    .sheet-item.active {
+      background: rgba(255,107,0,0.1);
+      border-left-color: #FF6B00;
+      color: #FF6B00;
+    }
+
+    .sheet-icon {
+      font-size: 16px;
+    }
+
+    .sheet-badge {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 2px 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50px;
+    }
+
+    .sheet-badge.detail {
+      background: rgba(255,107,0,0.2);
+      color: #FF6B00;
+    }
+
+    .sheet-badge.condition {
+      background: rgba(59,130,246,0.2);
+      color: #3b82f6;
+    }
+
+    .sheet-badge.confirmation {
+      background: rgba(34,197,94,0.2);
+      color: #22c55e;
+    }
+
+    /* メインエリア */
+    .main-area {
+      padding: 24px;
+    }
+
+    .sheet-header {
+      margin-bottom: 20px;
+    }
+
+    .sheet-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .sheet-meta {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* 明細テーブル（8列） */
+    .detail-table {
+      width: 100%;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 2fr 1fr 80px 50px 110px 120px 100px 120px;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.03);
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 80px 50px 110px 120px 100px 120px;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .table-row:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .row-name {
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-spec {
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-amount {
+      text-align: right;
+      font-weight: 600;
+      color: #FFB74D;
+    }
+
+    .row-budget {
+      text-align: right;
+    }
+
+    .budget-input {
+      width: 100%;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      text-align: right;
+      transition: all 0.2s;
+    }
+
+    .budget-input:focus {
+      outline: none;
+      border-color: #FF6B00;
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 3px rgba(255,107,0,0.1);
+    }
+
+    /* セレクトボックス */
+    .category-select, .vendor-select {
+      width: 100%;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-select:focus, .vendor-select:focus {
+      outline: none;
+      border-color: #FF6B00;
+    }
+
+    .category-select option, .vendor-select option {
+      background: #0a2540;
+      color: #fff;
+    }
+
+    .category-select.unselected, .vendor-select.unselected {
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* 合計フッター */
+    .total-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: rgba(0,0,0,0.2);
+      margin-top: 20px;
+      border-radius: 12px;
+    }
+
+    .total-label {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .total-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: #FF6B00;
+    }
+
+    /* 情報シート表示 */
+    .info-content {
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .info-row {
+      padding: 8px 0;
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,0.4);
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1200px) {
+      .summary-panel {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .profit-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .summary-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .layout-sidebar {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- エラーバナー -->
+  <div class="banner error" id="errorBanner">
+    <span class="banner-icon">⚠️</span>
+    <span id="errorMessage">エラーが発生しました</span>
+  </div>
+
+  <!-- 成功バナー -->
+  <div class="banner success" id="successBanner">
+    <span class="banner-icon">✅</span>
+    <span id="successMessage">保存しました</span>
+  </div>
+
+  <!-- ヘッダー -->
+  <header class="page-header">
+    <div class="back-btn" onclick="window.location.href='upload-page.html'">
+      ← 営業部屋
+    </div>
+    <div class="page-title">📄 実行予算書作成</div>
+    <div class="header-actions">
+      <button class="save-btn" onclick="saveBudget()">💾 保存</button>
+      <div class="user-badge">たく</div>
+    </div>
+  </header>
+
+  <!-- 科目別集計パネル -->
+  <div class="main-content">
+    <div class="summary-panel" id="summaryPanel">
+      <div class="summary-card labor">
+        <div class="summary-label">労務費</div>
+        <div class="summary-value" id="laborTotal">¥0</div>
+      </div>
+      <div class="summary-card outsource">
+        <div class="summary-label">外注費</div>
+        <div class="summary-value" id="outsourceTotal">¥0</div>
+      </div>
+      <div class="summary-card material">
+        <div class="summary-label">材料費</div>
+        <div class="summary-value" id="materialTotal">¥0</div>
+      </div>
+      <div class="summary-card equipment">
+        <div class="summary-label">機械費</div>
+        <div class="summary-value" id="equipmentTotal">¥0</div>
+      </div>
+      <div class="summary-card expense">
+        <div class="summary-label">経費</div>
+        <div class="summary-value" id="expenseTotal">¥0</div>
+      </div>
+    </div>
+
+    <!-- 粗利パネル -->
+    <div class="profit-panel" id="profitPanel">
+      <div class="profit-card">
+        <div class="profit-label">見積合計</div>
+        <div class="profit-value" id="estimateTotal">¥0</div>
+      </div>
+      <div class="profit-card">
+        <div class="profit-label">実行予算合計</div>
+        <div class="profit-value" id="budgetTotal">¥0</div>
+      </div>
+      <div class="profit-card">
+        <div class="profit-label">粗利額</div>
+        <div class="profit-value" id="profitAmount">¥0</div>
+      </div>
+      <div class="profit-card highlight">
+        <div class="profit-label">粗利率</div>
+        <div class="profit-value" id="profitRate">0%</div>
+        <div class="profit-badge" id="profitBadge">-</div>
+      </div>
+    </div>
+
+    <div class="dark-card layout-sidebar">
+      <!-- サイドバー -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">シート一覧</div>
+          <div class="sheet-count" id="sheetCount">0シート</div>
+        </div>
+        <ul class="sheet-list" id="sheetList">
+          <!-- シート一覧が動的に表示される -->
+        </ul>
+      </div>
+
+      <!-- メインエリア -->
+      <div class="main-area" id="mainArea">
+        <div class="empty-message">
+          データを読み込んでいます...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // グローバル変数
+    let excelData = null;
+    let activeSheet = null;
+    let budgetData = {};  // { "シート名-行番号": { amount, category, vendor } }
+    let allDetailRows = {}; // 全シートの明細行データを保持
+
+    // 協力業者マスタ
+    const vendors = [
+      { id: 1, name: '協力業者A', category: 'labor' },
+      { id: 2, name: '協力業者B', category: 'outsource' },
+      { id: 3, name: '協力業者C', category: 'material' },
+      { id: 4, name: '協力業者D', category: 'equipment' },
+      { id: 5, name: '協力業者E', category: 'outsource' }
+    ];
+
+    // 科目マスタ
+    const categories = [
+      { value: 'labor', label: '労務費' },
+      { value: 'outsource', label: '外注費' },
+      { value: 'material', label: '材料費' },
+      { value: 'equipment', label: '機械費' },
+      { value: 'expense', label: '経費' }
+    ];
+
+    // XSS対策: HTMLエスケープ関数
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
+    // エラーバナー表示
+    function showError(message) {
+      const banner = document.getElementById('errorBanner');
+      document.getElementById('errorMessage').textContent = message;
+      banner.classList.add('show');
+      setTimeout(() => {
+        banner.classList.remove('show');
+      }, 5000);
+    }
+
+    // 成功バナー表示
+    function showSuccess(message = '保存しました') {
+      const banner = document.getElementById('successBanner');
+      document.getElementById('successMessage').textContent = message;
+      banner.classList.add('show');
+      setTimeout(() => {
+        banner.classList.remove('show');
+      }, 3000);
+    }
+
+    // ページ読み込み時
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        loadExcelData();
+      } catch (error) {
+        console.error('初期化エラー:', error);
+        showError('ページの初期化に失敗しました');
+      }
+    });
+
+    // sessionStorageからExcelデータを読み込み
+    function loadExcelData() {
+      const stored = sessionStorage.getItem('uploadedExcelData');
+      if (stored) {
+        try {
+          excelData = JSON.parse(stored);
+          displaySheets();
+          updateSummary();
+        } catch (error) {
+          console.error('データの読み込みに失敗:', error);
+          showError('データの読み込みに失敗しました');
+          document.getElementById('mainArea').innerHTML = `
+            <div class="empty-message">
+              データの読み込みに失敗しました<br>
+              <button onclick="window.location.href='upload-page.html'" style="margin-top: 20px; padding: 10px 24px; background: #FF6B00; border: none; border-radius: 8px; color: white; cursor: pointer;">
+                アップロード画面に戻る
+              </button>
+            </div>
+          `;
+        }
+      } else {
+        document.getElementById('mainArea').innerHTML = `
+          <div class="empty-message">
+            アップロードされたデータがありません<br>
+            <button onclick="window.location.href='upload-page.html'" style="margin-top: 20px; padding: 10px 24px; background: #FF6B00; border: none; border-radius: 8px; color: white; cursor: pointer;">
+              アップロード画面に戻る
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // シート表示
+    function displaySheets() {
+      if (!excelData || !excelData.sheetNames || excelData.sheetNames.length === 0) {
+        return;
+      }
+
+      document.getElementById('sheetCount').textContent = excelData.sheetNames.length + 'シート';
+
+      const sheetList = document.getElementById('sheetList');
+      sheetList.innerHTML = '';
+
+      excelData.sheetNames.forEach((sheetName, index) => {
+        const sheetType = detectSheetType(sheetName);
+        const icon = getSheetIcon(sheetType);
+        const badge = getSheetBadge(sheetType);
+
+        const li = document.createElement('li');
+        li.className = 'sheet-item';
+        if (index === 0) {
+          li.classList.add('active');
+          activeSheet = sheetName;
+        }
+
+        li.innerHTML = `
+          <span class="sheet-icon">${icon}</span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(sheetName)}</span>
+          ${badge}
+        `;
+
+        li.addEventListener('click', () => {
+          document.querySelectorAll('.sheet-item').forEach(item => item.classList.remove('active'));
+          li.classList.add('active');
+          activeSheet = sheetName;
+          displaySheetContent(sheetName);
+        });
+
+        sheetList.appendChild(li);
+
+        // 内訳シートのデータを事前に解析
+        if (sheetType === 'detail') {
+          parseDetailSheet(sheetName);
+        }
+      });
+
+      // 最初のシートを表示
+      if (excelData.sheetNames.length > 0) {
+        displaySheetContent(excelData.sheetNames[0]);
+      }
+    }
+
+    // シートタイプ判定
+    function detectSheetType(sheetName) {
+      const name = sheetName.toLowerCase();
+      if (name.includes('条件')) return 'condition';
+      if (name.includes('確認')) return 'confirmation';
+      if (name.includes('表紙') || name.includes('総括')) return 'cover';
+      return 'detail';
+    }
+
+    // シートアイコン
+    function getSheetIcon(type) {
+      const icons = {
+        detail: '📋',
+        condition: '📝',
+        confirmation: '✅',
+        cover: '📑'
+      };
+      return icons[type] || '📄';
+    }
+
+    // シートバッジ
+    function getSheetBadge(type) {
+      if (type === 'detail') return '<span class="sheet-badge detail">内訳</span>';
+      if (type === 'condition') return '<span class="sheet-badge condition">条件</span>';
+      if (type === 'confirmation') return '<span class="sheet-badge confirmation">確認</span>';
+      return '';
+    }
+
+    // 内訳シート解析（事前処理）
+    function parseDetailSheet(sheetName) {
+      const sheetData = excelData.sheets[sheetName];
+      if (!sheetData || sheetData.length === 0) return;
+
+      // ヘッダー行を探す
+      let headerRowIndex = -1;
+      for (let i = 0; i < Math.min(30, sheetData.length); i++) {
+        const row = sheetData[i];
+        const rowText = row.join('').toLowerCase();
+        if (rowText.includes('名称') && rowText.includes('数量') && rowText.includes('金額')) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) return;
+
+      const headers = sheetData[headerRowIndex];
+      const nameIdx = headers.findIndex(h => h && h.toString().includes('名称'));
+      const amountIdx = headers.findIndex(h => h && h.toString().includes('金額'));
+
+      const rows = [];
+      for (let i = headerRowIndex + 1; i < sheetData.length; i++) {
+        const row = sheetData[i];
+        const name = row[nameIdx];
+        const amount = parseFloat(row[amountIdx]) || 0;
+
+        if (name && amount > 0) {
+          const nameStr = name.toString().toLowerCase();
+          if (!nameStr.includes('小計') && !nameStr.includes('合計')) {
+            rows.push({
+              name: row[nameIdx] || '',
+              amount: amount,
+              rowIndex: i
+            });
+          }
+        }
+      }
+
+      allDetailRows[sheetName] = rows;
+    }
+
+    // シート内容表示
+    function displaySheetContent(sheetName) {
+      try {
+        const sheetData = excelData.sheets[sheetName];
+        if (!sheetData || sheetData.length === 0) {
+          document.getElementById('mainArea').innerHTML = '<div class="empty-message">シートにデータがありません</div>';
+          return;
+        }
+
+        const sheetType = detectSheetType(sheetName);
+
+        if (sheetType === 'detail') {
+          displayDetailSheet(sheetName, sheetData);
+        } else {
+          displayInfoSheet(sheetName, sheetData, sheetType);
+        }
+      } catch (error) {
+        console.error('シート表示エラー:', error);
+        showError('シートの表示に失敗しました');
+      }
+    }
+
+    // 内訳明細シート表示
+    function displayDetailSheet(sheetName, data) {
+      // ヘッダー行を探す
+      let headerRowIndex = -1;
+      for (let i = 0; i < Math.min(30, data.length); i++) {
+        const row = data[i];
+        const rowText = row.join('').toLowerCase();
+        if (rowText.includes('名称') && rowText.includes('数量') && rowText.includes('金額')) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) {
+        document.getElementById('mainArea').innerHTML = '<div class="empty-message">内訳明細の形式を認識できません</div>';
+        return;
+      }
+
+      // ヘッダー取得
+      const headers = data[headerRowIndex];
+      const nameIdx = headers.findIndex(h => h && h.toString().includes('名称'));
+      const specIdx = headers.findIndex(h => h && h.toString().includes('規格'));
+      const quantityIdx = headers.findIndex(h => h && h.toString().includes('数量'));
+      const unitIdx = headers.findIndex(h => h && h.toString().includes('単位'));
+      const amountIdx = headers.findIndex(h => h && h.toString().includes('金額'));
+
+      // データ行を抽出
+      const rows = [];
+      let sheetTotal = 0;
+      for (let i = headerRowIndex + 1; i < data.length; i++) {
+        const row = data[i];
+        const name = row[nameIdx];
+        const amount = parseFloat(row[amountIdx]) || 0;
+
+        if (name && amount > 0) {
+          const nameStr = name.toString().toLowerCase();
+          if (!nameStr.includes('小計') && !nameStr.includes('合計')) {
+            rows.push({
+              name: row[nameIdx] || '',
+              spec: row[specIdx] || '',
+              quantity: row[quantityIdx] || '',
+              unit: row[unitIdx] || '',
+              amount: amount,
+              rowIndex: i
+            });
+            sheetTotal += amount;
+          }
+        }
+      }
+
+      // 科目セレクトオプション生成
+      const categoryOptions = categories.map(c =>
+        `<option value="${c.value}">${c.label}</option>`
+      ).join('');
+
+      // 業者セレクトオプション生成
+      const vendorOptions = vendors.map(v =>
+        `<option value="${v.id}">${escapeHtml(v.name)}</option>`
+      ).join('');
+
+      // テーブル作成
+      let html = `
+        <div class="sheet-header">
+          <div class="sheet-name">${escapeHtml(sheetName)}</div>
+          <div class="sheet-meta">内訳明細書 | ${rows.length}項目</div>
+        </div>
+        <div class="detail-table">
+          <div class="table-header">
+            <div>名称</div>
+            <div>規格</div>
+            <div>数量</div>
+            <div>単位</div>
+            <div>金額</div>
+            <div>実行予算</div>
+            <div>科目</div>
+            <div>協力業者</div>
+          </div>
+      `;
+
+      rows.forEach((row, idx) => {
+        const budgetKey = `${sheetName}-${idx}`;
+        const budgetInfo = budgetData[budgetKey] || { amount: '', category: '', vendor: '' };
+
+        html += `
+          <div class="table-row">
+            <div class="row-name" title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</div>
+            <div class="row-spec" title="${escapeHtml(row.spec)}">${escapeHtml(row.spec)}</div>
+            <div>${escapeHtml(row.quantity)}</div>
+            <div>${escapeHtml(row.unit)}</div>
+            <div class="row-amount">¥${formatAmount(row.amount)}</div>
+            <div class="row-budget">
+              <input
+                type="text"
+                class="budget-input"
+                data-key="${escapeHtml(budgetKey)}"
+                value="${escapeHtml(budgetInfo.amount)}"
+                placeholder="入力"
+              >
+            </div>
+            <div>
+              <select class="category-select ${budgetInfo.category ? '' : 'unselected'}" data-key="${escapeHtml(budgetKey)}">
+                <option value="">選択</option>
+                ${categoryOptions}
+              </select>
+            </div>
+            <div>
+              <select class="vendor-select ${budgetInfo.vendor ? '' : 'unselected'}" data-key="${escapeHtml(budgetKey)}">
+                <option value="">未選択</option>
+                ${vendorOptions}
+              </select>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+        </div>
+        <div class="total-footer">
+          <div class="total-label">このシート合計</div>
+          <div class="total-value">¥${formatAmount(sheetTotal)}</div>
+        </div>
+      `;
+
+      document.getElementById('mainArea').innerHTML = html;
+
+      // 保存済みの値を設定
+      document.querySelectorAll('.category-select').forEach(select => {
+        const key = select.dataset.key;
+        const info = budgetData[key];
+        if (info && info.category) {
+          select.value = info.category;
+          select.classList.remove('unselected');
+        }
+      });
+
+      document.querySelectorAll('.vendor-select').forEach(select => {
+        const key = select.dataset.key;
+        const info = budgetData[key];
+        if (info && info.vendor) {
+          select.value = info.vendor;
+          select.classList.remove('unselected');
+        }
+      });
+
+      // 実行予算入力イベント
+      document.querySelectorAll('.budget-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const key = e.target.dataset.key;
+          let value = e.target.value.replace(/[^\d]/g, '');
+          if (value.length > 15) {
+            value = value.slice(0, 15);
+          }
+          e.target.value = value;
+
+          if (!budgetData[key]) {
+            budgetData[key] = { amount: '', category: '', vendor: '' };
+          }
+          budgetData[key].amount = value;
+          updateSummary();
+        });
+      });
+
+      // 科目選択イベント
+      document.querySelectorAll('.category-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+          const key = e.target.dataset.key;
+          const value = e.target.value;
+
+          if (!budgetData[key]) {
+            budgetData[key] = { amount: '', category: '', vendor: '' };
+          }
+          budgetData[key].category = value;
+
+          if (value) {
+            e.target.classList.remove('unselected');
+          } else {
+            e.target.classList.add('unselected');
+          }
+          updateSummary();
+        });
+      });
+
+      // 協力業者選択イベント
+      document.querySelectorAll('.vendor-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+          const key = e.target.dataset.key;
+          const value = e.target.value;
+
+          if (!budgetData[key]) {
+            budgetData[key] = { amount: '', category: '', vendor: '' };
+          }
+          budgetData[key].vendor = value;
+
+          if (value) {
+            e.target.classList.remove('unselected');
+          } else {
+            e.target.classList.add('unselected');
+          }
+        });
+      });
+    }
+
+    // 情報シート表示（条件書、確認書、表紙）
+    function displayInfoSheet(sheetName, data, type) {
+      let typeName = '情報';
+      if (type === 'condition') typeName = '条件書';
+      if (type === 'confirmation') typeName = '確認書';
+      if (type === 'cover') typeName = '表紙';
+
+      let html = `
+        <div class="sheet-header">
+          <div class="sheet-name">${escapeHtml(sheetName)}</div>
+          <div class="sheet-meta">${escapeHtml(typeName)}</div>
+        </div>
+        <div class="info-content">
+      `;
+
+      data.forEach((row, idx) => {
+        if (idx > 100) return;
+        const rowData = row.filter(cell => cell !== '').join(' | ');
+        if (rowData) {
+          html += `<div class="info-row">${escapeHtml(rowData)}</div>`;
+        }
+      });
+
+      html += '</div>';
+      document.getElementById('mainArea').innerHTML = html;
+    }
+
+    // 集計更新
+    function updateSummary() {
+      const categoryTotals = {
+        labor: 0,
+        outsource: 0,
+        material: 0,
+        equipment: 0,
+        expense: 0
+      };
+
+      let estimateTotal = 0;
+      let budgetTotal = 0;
+
+      // 全シートの明細を集計
+      Object.keys(allDetailRows).forEach(sheetName => {
+        const rows = allDetailRows[sheetName];
+        rows.forEach((row, idx) => {
+          const key = `${sheetName}-${idx}`;
+          const info = budgetData[key];
+
+          estimateTotal += row.amount;
+
+          if (info && info.amount) {
+            const amount = parseFloat(info.amount) || 0;
+            budgetTotal += amount;
+
+            if (info.category && categoryTotals.hasOwnProperty(info.category)) {
+              categoryTotals[info.category] += amount;
+            }
+          }
+        });
+      });
+
+      // 科目別集計を更新
+      document.getElementById('laborTotal').textContent = '¥' + formatAmount(categoryTotals.labor);
+      document.getElementById('outsourceTotal').textContent = '¥' + formatAmount(categoryTotals.outsource);
+      document.getElementById('materialTotal').textContent = '¥' + formatAmount(categoryTotals.material);
+      document.getElementById('equipmentTotal').textContent = '¥' + formatAmount(categoryTotals.equipment);
+      document.getElementById('expenseTotal').textContent = '¥' + formatAmount(categoryTotals.expense);
+
+      // 粗利計算
+      const profitAmount = estimateTotal - budgetTotal;
+      const profitRate = estimateTotal > 0 ? (profitAmount / estimateTotal) * 100 : 0;
+
+      document.getElementById('estimateTotal').textContent = '¥' + formatAmount(estimateTotal);
+      document.getElementById('budgetTotal').textContent = '¥' + formatAmount(budgetTotal);
+      document.getElementById('profitAmount').textContent = '¥' + formatAmount(profitAmount);
+      document.getElementById('profitRate').textContent = profitRate.toFixed(1) + '%';
+
+      // 粗利バッジ更新
+      const badge = document.getElementById('profitBadge');
+      if (profitRate >= 25) {
+        badge.textContent = '優良';
+        badge.style.background = 'rgba(255,255,255,0.3)';
+      } else if (profitRate >= 15) {
+        badge.textContent = '良好';
+        badge.style.background = 'rgba(255,255,255,0.2)';
+      } else if (profitRate > 0) {
+        badge.textContent = '要注意';
+        badge.style.background = 'rgba(255,193,7,0.3)';
+      } else {
+        badge.textContent = '-';
+        badge.style.background = 'rgba(255,255,255,0.2)';
+      }
+    }
+
+    // 保存処理
+    function saveBudget() {
+      try {
+        // バリデーション
+        const budgetKeys = Object.keys(budgetData);
+        if (budgetKeys.length === 0) {
+          showError('実行予算が入力されていません');
+          return;
+        }
+
+        let hasValidData = false;
+        let hasInvalidData = false;
+
+        budgetKeys.forEach(key => {
+          const info = budgetData[key];
+          if (info.amount) {
+            const amount = parseFloat(info.amount);
+            if (amount > 0) {
+              hasValidData = true;
+            } else if (amount < 0) {
+              hasInvalidData = true;
+            }
+          }
+        });
+
+        if (!hasValidData) {
+          showError('有効な実行予算が入力されていません');
+          return;
+        }
+
+        if (hasInvalidData) {
+          showError('無効な実行予算額があります');
+          return;
+        }
+
+        // データ整形
+        const saveData = {
+          timestamp: new Date().toISOString(),
+          budgetDetails: budgetData,
+          summary: {
+            estimateTotal: parseFloat(document.getElementById('estimateTotal').textContent.replace(/[¥,]/g, '')) || 0,
+            budgetTotal: parseFloat(document.getElementById('budgetTotal').textContent.replace(/[¥,]/g, '')) || 0,
+            profitRate: parseFloat(document.getElementById('profitRate').textContent) || 0
+          }
+        };
+
+        // sessionStorageに一時保存
+        sessionStorage.setItem('budgetData', JSON.stringify(saveData));
+
+        // コンソールに出力（API連携用）
+        console.log('保存データ:', saveData);
+
+        showSuccess('実行予算を保存しました');
+
+      } catch (error) {
+        console.error('保存エラー:', error);
+        showError('保存に失敗しました');
+      }
+    }
+
+    // 金額フォーマット
+    function formatAmount(num) {
+      return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+  </script>
+</body>
+</html>

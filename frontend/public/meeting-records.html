@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商談記録 | sunyuTECH-DX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            background-color: #E8E4DF;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #FF6B00 0%, #e55a00 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title h2 {
+            font-size: 1.75rem;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-title p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B00 0%, #e55a00 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255,107,0,0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #0a2540;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0a2540;
+        }
+
+        .stat-card .change {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-card .change.positive {
+            color: #16a34a;
+        }
+
+        .stat-card .change.negative {
+            color: #dc2626;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255,107,0,0.1);
+        }
+
+        .filter-btn {
+            padding: 0.625rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f8fafc;
+        }
+
+        /* Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #0a2540;
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header.sales {
+            background: linear-gradient(135deg, #FF6B00 0%, #e55a00 100%);
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Meeting List */
+        .meeting-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .meeting-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .meeting-item:hover {
+            border-color: #FF6B00;
+            box-shadow: 0 2px 8px rgba(255,107,0,0.1);
+        }
+
+        .meeting-item.selected {
+            border-color: #FF6B00;
+            background: #fff8f5;
+        }
+
+        .meeting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .meeting-title {
+            font-weight: 600;
+            color: #0a2540;
+            font-size: 1rem;
+        }
+
+        .meeting-date {
+            font-size: 0.75rem;
+            color: #666;
+            background: #f1f5f9;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .meeting-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+
+        .meeting-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .meeting-summary {
+            font-size: 0.875rem;
+            color: #444;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .meeting-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .meeting-tag {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .meeting-tag.hot {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .meeting-tag.warm {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .meeting-tag.follow-up {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-badge.new {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .status-badge.progress {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+
+        .status-badge.proposal {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .status-badge.closed {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        /* Detail Panel */
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section h4 {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+        }
+
+        .detail-row .label {
+            color: #666;
+        }
+
+        .detail-row .value {
+            font-weight: 500;
+            color: #0a2540;
+        }
+
+        .detail-content {
+            font-size: 0.875rem;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.625rem;
+            top: 0.25rem;
+            width: 10px;
+            height: 10px;
+            background: #FF6B00;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #e2e8f0;
+        }
+
+        .timeline-date {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-content {
+            font-size: 0.875rem;
+            color: #333;
+        }
+
+        /* Next Action */
+        .next-action {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .next-action h5 {
+            font-size: 0.85rem;
+            color: #ea580c;
+            margin-bottom: 0.5rem;
+        }
+
+        .next-action p {
+            font-size: 0.875rem;
+            color: #333;
+        }
+
+        .next-action .due-date {
+            font-size: 0.75rem;
+            color: #ea580c;
+            margin-top: 0.5rem;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #FF6B00 0%, #e55a00 100%);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255,107,0,0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(120%);
+            transition: transform 0.3s;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid #16a34a;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc2626;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination button:hover {
+            background: #f8fafc;
+        }
+
+        .pagination button.active {
+            background: #FF6B00;
+            color: white;
+            border-color: #FF6B00;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>📝 商談記録</h1>
+        <nav class="header-nav">
+            <a href="project-kanban.html" class="nav-btn">📋 案件カンバン</a>
+            <a href="dashboard-budget.html" class="nav-btn">📊 ダッシュボード</a>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h2>商談記録管理</h2>
+                <p>商談の進捗状況と履歴を管理します</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="exportMeetings()">📤 エクスポート</button>
+                <button class="btn btn-primary" onclick="openNewMeetingModal()">➕ 新規商談記録</button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">今月の商談数</div>
+                <div class="value">24</div>
+                <div class="change positive">↑ 前月比 +8件</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">商談中案件</div>
+                <div class="value">12</div>
+                <div class="change positive">↑ 3件増加</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">今月の成約件数</div>
+                <div class="value">5</div>
+                <div class="change positive">成約率 41.7%</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">商談見込金額</div>
+                <div class="value">¥2.8億</div>
+                <div class="change positive">↑ +¥5,000万</div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>キーワード検索</label>
+                    <input type="text" id="searchKeyword" placeholder="顧客名、案件名で検索..." oninput="filterMeetings()">
+                </div>
+                <div class="filter-group">
+                    <label>ステータス</label>
+                    <select id="filterStatus" onchange="filterMeetings()">
+                        <option value="">すべて</option>
+                        <option value="new">新規</option>
+                        <option value="progress">商談中</option>
+                        <option value="proposal">提案中</option>
+                        <option value="closed">クローズ</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>担当者</label>
+                    <select id="filterAssignee" onchange="filterMeetings()">
+                        <option value="">すべて</option>
+                        <option value="1">田中 一郎</option>
+                        <option value="2">鈴木 花子</option>
+                        <option value="3">佐藤 健太</option>
+                        <option value="4">山田 美咲</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>期間</label>
+                    <select id="filterPeriod" onchange="filterMeetings()">
+                        <option value="">すべて</option>
+                        <option value="today">今日</option>
+                        <option value="week">今週</option>
+                        <option value="month">今月</option>
+                        <option value="quarter">今四半期</option>
+                    </select>
+                </div>
+                <button class="filter-btn" onclick="resetFilters()">🔄 リセット</button>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Meeting List -->
+            <div class="card">
+                <div class="card-header sales">
+                    <h3>商談記録一覧</h3>
+                    <span id="meetingCount">8件</span>
+                </div>
+                <div class="card-body">
+                    <div class="meeting-list" id="meetingList">
+                        <!-- Dynamic content -->
+                    </div>
+                    <div class="pagination" id="pagination">
+                        <!-- Dynamic pagination -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Panel -->
+            <div class="card" id="detailPanel">
+                <div class="card-header">
+                    <h3>商談詳細</h3>
+                </div>
+                <div class="card-body">
+                    <div class="empty-state" id="detailEmpty">
+                        <div class="icon">📋</div>
+                        <p>商談記録を選択してください</p>
+                    </div>
+                    <div id="detailContent" style="display: none;">
+                        <!-- Dynamic detail content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Meeting Modal -->
+    <div class="modal-overlay" id="newMeetingModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>新規商談記録</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>商談日 *</label>
+                        <input type="date" id="meetingDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>時間</label>
+                        <input type="time" id="meetingTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>顧客名 *</label>
+                    <input type="text" id="customerName" placeholder="顧客名を入力" required>
+                </div>
+                <div class="form-group">
+                    <label>案件名 *</label>
+                    <input type="text" id="projectName" placeholder="案件名を入力" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ステータス</label>
+                        <select id="meetingStatus">
+                            <option value="new">新規</option>
+                            <option value="progress">商談中</option>
+                            <option value="proposal">提案中</option>
+                            <option value="closed">クローズ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>担当者</label>
+                        <select id="meetingAssignee">
+                            <option value="1">田中 一郎</option>
+                            <option value="2">鈴木 花子</option>
+                            <option value="3">佐藤 健太</option>
+                            <option value="4">山田 美咲</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>見込金額</label>
+                        <input type="number" id="expectedAmount" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>確度</label>
+                        <select id="probability">
+                            <option value="10">10% - 低</option>
+                            <option value="30">30% - やや低</option>
+                            <option value="50" selected>50% - 中</option>
+                            <option value="70">70% - やや高</option>
+                            <option value="90">90% - 高</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>出席者</label>
+                    <input type="text" id="attendees" placeholder="出席者名（カンマ区切り）">
+                </div>
+                <div class="form-group">
+                    <label>商談内容 *</label>
+                    <textarea id="meetingContent" placeholder="商談の内容を記録..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>次回アクション</label>
+                    <textarea id="nextAction" placeholder="次回のアクション予定..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>次回予定日</label>
+                        <input type="date" id="nextDate">
+                    </div>
+                    <div class="form-group">
+                        <label>タグ</label>
+                        <select id="meetingTags" multiple>
+                            <option value="hot">HOT案件</option>
+                            <option value="warm">要フォロー</option>
+                            <option value="follow-up">追加提案</option>
+                            <option value="urgent">緊急</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="saveMeeting()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <span class="notification-icon">✓</span>
+        <span class="notification-text" id="notificationText"></span>
+    </div>
+
+    <script>
+        // Sample Data
+        const meetings = [
+            {
+                id: 1,
+                date: '2024-01-10',
+                time: '14:00',
+                customerName: '東京建設株式会社',
+                projectName: '本社ビル改修工事',
+                status: 'proposal',
+                assignee: '田中 一郎',
+                assigneeId: 1,
+                expectedAmount: 150000000,
+                probability: 70,
+                attendees: ['田中 一郎', '山田部長', '佐藤課長'],
+                content: '改修工事の詳細仕様について協議。外壁塗装、防水工事、設備更新を含む大規模改修の見積を依頼された。3月末までに提案書を提出予定。予算は1.5億円程度を想定。',
+                nextAction: '詳細見積書の作成、現地調査のスケジュール確定',
+                nextDate: '2024-01-20',
+                tags: ['hot'],
+                history: [
+                    { date: '2024-01-10', content: '仕様協議、見積依頼受領' },
+                    { date: '2024-01-05', content: '現地下見実施' },
+                    { date: '2023-12-20', content: '初回訪問、ヒアリング' }
+                ]
+            },
+            {
+                id: 2,
+                date: '2024-01-09',
+                time: '10:30',
+                customerName: '大阪物産株式会社',
+                projectName: '倉庫増築工事',
+                status: 'progress',
+                assignee: '鈴木 花子',
+                assigneeId: 2,
+                expectedAmount: 85000000,
+                probability: 50,
+                attendees: ['鈴木 花子', '木村工場長'],
+                content: '増築計画の概要説明を受けた。既存倉庫の隣接地に500㎡程度の増築を検討中。工期は来年4月から半年間を希望。',
+                nextAction: '概算見積の提示、工期検討',
+                nextDate: '2024-01-25',
+                tags: ['warm'],
+                history: [
+                    { date: '2024-01-09', content: '増築計画ヒアリング' },
+                    { date: '2023-12-15', content: '紹介による初回面談' }
+                ]
+            },
+            {
+                id: 3,
+                date: '2024-01-08',
+                time: '15:00',
+                customerName: '名古屋商事株式会社',
+                projectName: '店舗リニューアル',
+                status: 'new',
+                assignee: '佐藤 健太',
+                assigneeId: 3,
+                expectedAmount: 25000000,
+                probability: 30,
+                attendees: ['佐藤 健太', '山本店長'],
+                content: '既存店舗のリニューアル相談。内装の刷新と設備更新を検討中。競合他社からも見積を取得予定とのこと。',
+                nextAction: '現地調査、デザイン提案',
+                nextDate: '2024-01-22',
+                tags: ['follow-up'],
+                history: [
+                    { date: '2024-01-08', content: '初回ヒアリング実施' }
+                ]
+            },
+            {
+                id: 4,
+                date: '2024-01-05',
+                time: '11:00',
+                customerName: '福岡テクノ株式会社',
+                projectName: '工場設備更新',
+                status: 'progress',
+                assignee: '田中 一郎',
+                assigneeId: 1,
+                expectedAmount: 120000000,
+                probability: 60,
+                attendees: ['田中 一郎', '中村工場長', '高橋設備課長'],
+                content: '生産ライン設備の更新について相談。省エネ設備への更新を検討中。補助金活用も視野に入れている。',
+                nextAction: '補助金申請サポート、詳細仕様検討',
+                nextDate: '2024-01-30',
+                tags: ['hot', 'warm'],
+                history: [
+                    { date: '2024-01-05', content: '設備更新相談、現地確認' },
+                    { date: '2023-12-28', content: '電話での事前ヒアリング' }
+                ]
+            },
+            {
+                id: 5,
+                date: '2024-01-04',
+                time: '13:30',
+                customerName: '札幌不動産株式会社',
+                projectName: 'マンション大規模修繕',
+                status: 'proposal',
+                assignee: '山田 美咲',
+                assigneeId: 4,
+                expectedAmount: 280000000,
+                probability: 80,
+                attendees: ['山田 美咲', '伊藤理事長', '渡辺管理会社担当'],
+                content: '築25年のマンション大規模修繕工事。外壁塗装、屋上防水、共用部改修を含む。総会決議済み、2月中に業者決定予定。',
+                nextAction: '最終見積提出、プレゼン準備',
+                nextDate: '2024-01-18',
+                tags: ['hot'],
+                history: [
+                    { date: '2024-01-04', content: '最終仕様確認' },
+                    { date: '2023-12-20', content: '見積提出' },
+                    { date: '2023-12-10', content: '建物診断実施' },
+                    { date: '2023-11-25', content: '初回提案' }
+                ]
+            },
+            {
+                id: 6,
+                date: '2024-01-03',
+                time: '09:00',
+                customerName: '広島製造株式会社',
+                projectName: '事務所移転工事',
+                status: 'closed',
+                assignee: '鈴木 花子',
+                assigneeId: 2,
+                expectedAmount: 45000000,
+                probability: 0,
+                attendees: ['鈴木 花子', '小林総務部長'],
+                content: '競合他社に決定との連絡。価格面で折り合わず。今後の関係維持のため、定期的なフォローを継続。',
+                nextAction: '半年後にフォロー連絡',
+                nextDate: '2024-07-01',
+                tags: [],
+                history: [
+                    { date: '2024-01-03', content: '失注連絡受領' },
+                    { date: '2023-12-25', content: '最終見積提出' },
+                    { date: '2023-12-15', content: '仕様確認' }
+                ]
+            },
+            {
+                id: 7,
+                date: '2024-01-02',
+                time: '16:00',
+                customerName: '神戸サービス株式会社',
+                projectName: 'ホテル改装工事',
+                status: 'progress',
+                assignee: '佐藤 健太',
+                assigneeId: 3,
+                expectedAmount: 95000000,
+                probability: 40,
+                attendees: ['佐藤 健太', '松本支配人'],
+                content: '客室リニューアルの相談。50室の改装を3期に分けて実施予定。インバウンド需要回復に向けた投資。',
+                nextAction: 'サンプルルーム提案、工程表作成',
+                nextDate: '2024-01-28',
+                tags: ['warm', 'follow-up'],
+                history: [
+                    { date: '2024-01-02', content: '改装計画ヒアリング' }
+                ]
+            },
+            {
+                id: 8,
+                date: '2023-12-28',
+                time: '14:30',
+                customerName: '横浜物流株式会社',
+                projectName: '配送センター新築',
+                status: 'new',
+                assignee: '山田 美咲',
+                assigneeId: 4,
+                expectedAmount: 350000000,
+                probability: 20,
+                attendees: ['山田 美咲', '吉田社長'],
+                content: '新規配送センターの建設計画。土地選定中の段階。情報収集が主目的の初回面談。具体化は来年度以降の見込み。',
+                nextAction: '土地情報の提供、他事例の紹介',
+                nextDate: '2024-02-15',
+                tags: [],
+                history: [
+                    { date: '2023-12-28', content: '初回面談、情報収集' }
+                ]
+            }
+        ];
+
+        let filteredMeetings = [...meetings];
+        let selectedMeetingId = null;
+        let currentPage = 1;
+        const itemsPerPage = 5;
+
+        // XSS Prevention
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Format number
+        function formatNumber(num) {
+            if (num >= 100000000) {
+                return (num / 100000000).toFixed(1) + '億';
+            } else if (num >= 10000) {
+                return (num / 10000).toFixed(0) + '万';
+            }
+            return num.toLocaleString('ja-JP');
+        }
+
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const labels = {
+                new: '新規',
+                progress: '商談中',
+                proposal: '提案中',
+                closed: 'クローズ'
+            };
+            return `<span class="status-badge ${status}">${labels[status]}</span>`;
+        }
+
+        // Get tag HTML
+        function getTagsHtml(tags) {
+            const tagLabels = {
+                hot: 'HOT案件',
+                warm: '要フォロー',
+                'follow-up': '追加提案',
+                urgent: '緊急'
+            };
+            return tags.map(tag => `<span class="meeting-tag ${tag}">${tagLabels[tag]}</span>`).join('');
+        }
+
+        // Render meeting list
+        function renderMeetingList() {
+            const container = document.getElementById('meetingList');
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageMeetings = filteredMeetings.slice(start, end);
+
+            if (pageMeetings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <p>該当する商談記録がありません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pageMeetings.map(meeting => `
+                <div class="meeting-item ${selectedMeetingId === meeting.id ? 'selected' : ''}"
+                     onclick="selectMeeting(${meeting.id})">
+                    <div class="meeting-header">
+                        <span class="meeting-title">${escapeHtml(meeting.customerName)}</span>
+                        <span class="meeting-date">${meeting.date}</span>
+                    </div>
+                    <div class="meeting-meta">
+                        ${getStatusBadge(meeting.status)}
+                        <span>👤 ${escapeHtml(meeting.assignee)}</span>
+                        <span>💰 ¥${formatNumber(meeting.expectedAmount)}</span>
+                    </div>
+                    <div class="meeting-summary">${escapeHtml(meeting.projectName)}: ${escapeHtml(meeting.content)}</div>
+                    ${meeting.tags.length > 0 ? `<div class="meeting-tags">${getTagsHtml(meeting.tags)}</div>` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('meetingCount').textContent = `${filteredMeetings.length}件`;
+            renderPagination();
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredMeetings.length / itemsPerPage);
+            const container = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>←</button>
+            `;
+
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button onclick="changePage(${i})" class="${currentPage === i ? 'active' : ''}">${i}</button>`;
+            }
+
+            html += `
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>→</button>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Change page
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredMeetings.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderMeetingList();
+        }
+
+        // Select meeting
+        function selectMeeting(id) {
+            selectedMeetingId = id;
+            renderMeetingList();
+            renderDetail();
+        }
+
+        // Render detail
+        function renderDetail() {
+            const emptyEl = document.getElementById('detailEmpty');
+            const contentEl = document.getElementById('detailContent');
+
+            if (!selectedMeetingId) {
+                emptyEl.style.display = 'block';
+                contentEl.style.display = 'none';
+                return;
+            }
+
+            const meeting = meetings.find(m => m.id === selectedMeetingId);
+            if (!meeting) return;
+
+            emptyEl.style.display = 'none';
+            contentEl.style.display = 'block';
+
+            contentEl.innerHTML = `
+                <div class="detail-section">
+                    <h4>📌 基本情報</h4>
+                    <div class="detail-row">
+                        <span class="label">顧客名</span>
+                        <span class="value">${escapeHtml(meeting.customerName)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">案件名</span>
+                        <span class="value">${escapeHtml(meeting.projectName)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">ステータス</span>
+                        <span class="value">${getStatusBadge(meeting.status)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">担当者</span>
+                        <span class="value">${escapeHtml(meeting.assignee)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">見込金額</span>
+                        <span class="value">¥${meeting.expectedAmount.toLocaleString('ja-JP')}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">確度</span>
+                        <span class="value">${meeting.probability}%</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>📝 商談内容</h4>
+                    <div class="detail-content">${escapeHtml(meeting.content)}</div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>👥 出席者</h4>
+                    <div class="detail-content">${meeting.attendees.map(a => escapeHtml(a)).join('、')}</div>
+                </div>
+
+                ${meeting.nextAction ? `
+                <div class="detail-section">
+                    <h4>📅 次回アクション</h4>
+                    <div class="next-action">
+                        <p>${escapeHtml(meeting.nextAction)}</p>
+                        ${meeting.nextDate ? `<div class="due-date">期限: ${meeting.nextDate}</div>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="detail-section">
+                    <h4>📜 商談履歴</h4>
+                    <div class="timeline">
+                        ${meeting.history.map(h => `
+                            <div class="timeline-item">
+                                <div class="timeline-date">${h.date}</div>
+                                <div class="timeline-content">${escapeHtml(h.content)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="editMeeting(${meeting.id})">✏️ 編集</button>
+                    <button class="btn btn-primary" onclick="addFollowUp(${meeting.id})">➕ フォロー追加</button>
+                </div>
+            `;
+        }
+
+        // Filter meetings
+        function filterMeetings() {
+            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+            const status = document.getElementById('filterStatus').value;
+            const assignee = document.getElementById('filterAssignee').value;
+            const period = document.getElementById('filterPeriod').value;
+
+            filteredMeetings = meetings.filter(meeting => {
+                // Keyword filter
+                if (keyword) {
+                    const searchText = `${meeting.customerName} ${meeting.projectName} ${meeting.content}`.toLowerCase();
+                    if (!searchText.includes(keyword)) return false;
+                }
+
+                // Status filter
+                if (status && meeting.status !== status) return false;
+
+                // Assignee filter
+                if (assignee && meeting.assigneeId !== parseInt(assignee)) return false;
+
+                // Period filter
+                if (period) {
+                    const meetingDate = new Date(meeting.date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    switch (period) {
+                        case 'today':
+                            if (meetingDate.toDateString() !== today.toDateString()) return false;
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(today);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            if (meetingDate < weekAgo) return false;
+                            break;
+                        case 'month':
+                            const monthAgo = new Date(today);
+                            monthAgo.setMonth(monthAgo.getMonth() - 1);
+                            if (meetingDate < monthAgo) return false;
+                            break;
+                        case 'quarter':
+                            const quarterAgo = new Date(today);
+                            quarterAgo.setMonth(quarterAgo.getMonth() - 3);
+                            if (meetingDate < quarterAgo) return false;
+                            break;
+                    }
+                }
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderMeetingList();
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterAssignee').value = '';
+            document.getElementById('filterPeriod').value = '';
+            filteredMeetings = [...meetings];
+            currentPage = 1;
+            renderMeetingList();
+            showNotification('フィルターをリセットしました', 'success');
+        }
+
+        // Open new meeting modal
+        function openNewMeetingModal() {
+            const modal = document.getElementById('newMeetingModal');
+            modal.classList.add('active');
+
+            // Set default date to today
+            document.getElementById('meetingDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('newMeetingModal').classList.remove('active');
+        }
+
+        // Save meeting
+        function saveMeeting() {
+            const date = document.getElementById('meetingDate').value;
+            const customerName = document.getElementById('customerName').value.trim();
+            const projectName = document.getElementById('projectName').value.trim();
+            const content = document.getElementById('meetingContent').value.trim();
+
+            if (!date || !customerName || !projectName || !content) {
+                showNotification('必須項目を入力してください', 'error');
+                return;
+            }
+
+            // In production, this would save to API
+            const newMeeting = {
+                id: meetings.length + 1,
+                date: date,
+                time: document.getElementById('meetingTime').value || '10:00',
+                customerName: customerName,
+                projectName: projectName,
+                status: document.getElementById('meetingStatus').value,
+                assignee: document.querySelector('#meetingAssignee option:checked').text,
+                assigneeId: parseInt(document.getElementById('meetingAssignee').value),
+                expectedAmount: parseInt(document.getElementById('expectedAmount').value) || 0,
+                probability: parseInt(document.getElementById('probability').value),
+                attendees: document.getElementById('attendees').value.split(',').map(a => a.trim()).filter(a => a),
+                content: content,
+                nextAction: document.getElementById('nextAction').value.trim(),
+                nextDate: document.getElementById('nextDate').value,
+                tags: Array.from(document.getElementById('meetingTags').selectedOptions).map(o => o.value),
+                history: [{ date: date, content: '初回商談実施' }]
+            };
+
+            meetings.unshift(newMeeting);
+            filteredMeetings = [...meetings];
+            renderMeetingList();
+            closeModal();
+            showNotification('商談記録を保存しました', 'success');
+
+            // Reset form
+            document.getElementById('customerName').value = '';
+            document.getElementById('projectName').value = '';
+            document.getElementById('meetingContent').value = '';
+            document.getElementById('nextAction').value = '';
+        }
+
+        // Edit meeting
+        function editMeeting(id) {
+            showNotification('編集機能は準備中です', 'success');
+        }
+
+        // Add follow up
+        function addFollowUp(id) {
+            showNotification('フォロー追加機能は準備中です', 'success');
+        }
+
+        // Export meetings
+        function exportMeetings() {
+            showNotification('エクスポート機能は準備中です', 'success');
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            const notificationIcon = notification.querySelector('.notification-icon');
+
+            notification.className = `notification ${type}`;
+            notificationText.textContent = message;
+            notificationIcon.textContent = type === 'success' ? '✓' : '✕';
+
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderMeetingList();
+        });
+    </script>
+</body>
+</html>

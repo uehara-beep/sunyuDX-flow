@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF/Excel出力 | sunyuTECH-DX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            background-color: #E8E4DF;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0a2540 0%, #1a365d 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Page Title */
+        .page-title {
+            margin-bottom: 2rem;
+        }
+
+        .page-title h2 {
+            font-size: 1.75rem;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-title p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Layout Grid */
+        .export-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .export-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #0a2540;
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Export Type Selection */
+        .export-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .export-type-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .export-type-card:hover {
+            border-color: #0066cc;
+            background: #f8fafc;
+        }
+
+        .export-type-card.selected {
+            border-color: #0066cc;
+            background: #eff6ff;
+        }
+
+        .export-type-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .export-type-card.pdf .icon {
+            color: #dc2626;
+        }
+
+        .export-type-card.excel .icon {
+            color: #16a34a;
+        }
+
+        .export-type-card h4 {
+            font-size: 1.125rem;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+        }
+
+        .export-type-card p {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group select,
+        .form-group input[type="text"],
+        .form-group input[type="date"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0,102,204,0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Checkbox Group */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: #f1f5f9;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #333;
+            flex: 1;
+        }
+
+        /* Template Selection */
+        .template-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .template-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-item:hover {
+            border-color: #0066cc;
+            background: #f8fafc;
+        }
+
+        .template-item.selected {
+            border-color: #0066cc;
+            background: #eff6ff;
+        }
+
+        .template-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .template-info {
+            flex: 1;
+        }
+
+        .template-info h5 {
+            font-size: 0.9rem;
+            color: #0a2540;
+            margin-bottom: 0.25rem;
+        }
+
+        .template-info p {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            margin-bottom: 2rem;
+        }
+
+        .preview-container {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 400px;
+            position: relative;
+        }
+
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #94a3b8;
+        }
+
+        .preview-placeholder .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .preview-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+
+        .preview-header {
+            text-align: center;
+            border-bottom: 2px solid #0a2540;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-header h4 {
+            font-size: 1.25rem;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-header p {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .preview-table th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .preview-table .number {
+            text-align: right;
+        }
+
+        .preview-summary {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .preview-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            font-size: 0.8rem;
+        }
+
+        .preview-summary-row.total {
+            font-weight: 600;
+            border-top: 1px solid #d1d5db;
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Export Button */
+        .export-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,102,204,0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #0a2540;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+
+        .btn-pdf:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+        }
+
+        .btn-excel {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+
+        .btn-excel:hover {
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+        }
+
+        /* History Section */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .history-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .history-icon.pdf {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .history-icon.excel {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-info h5 {
+            font-size: 0.875rem;
+            color: #0a2540;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-info p {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .history-btn {
+            padding: 0.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s;
+        }
+
+        .history-btn:hover {
+            color: #0066cc;
+        }
+
+        /* Progress Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 400px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-icon.processing {
+            color: #0066cc;
+            animation: pulse 1.5s infinite;
+        }
+
+        .modal-icon.success {
+            color: #16a34a;
+        }
+
+        .modal-icon.error {
+            color: #dc2626;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .modal h3 {
+            font-size: 1.25rem;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0066cc, #00aaff);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: #0066cc;
+            color: white;
+            border: none;
+        }
+
+        .modal-btn-primary:hover {
+            background: #0052a3;
+        }
+
+        .modal-btn-secondary {
+            background: white;
+            color: #0a2540;
+            border: 1px solid #d1d5db;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(120%);
+            transition: transform 0.3s;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid #16a34a;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc2626;
+        }
+
+        .notification-icon {
+            font-size: 1.25rem;
+        }
+
+        .notification.success .notification-icon {
+            color: #16a34a;
+        }
+
+        .notification.error .notification-icon {
+            color: #dc2626;
+        }
+
+        .notification-text {
+            font-size: 0.9rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>📄 PDF/Excel出力</h1>
+        <nav class="header-nav">
+            <a href="budget-list.html" class="nav-btn">← 予算一覧に戻る</a>
+            <a href="dashboard-budget.html" class="nav-btn">📊 ダッシュボード</a>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-title">
+            <h2>帳票出力</h2>
+            <p>予算データをPDFまたはExcel形式でエクスポートします</p>
+        </div>
+
+        <div class="export-grid">
+            <!-- Left Column - Settings -->
+            <div class="settings-column">
+                <!-- Export Type Selection -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h3>出力形式の選択</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="export-types">
+                            <div class="export-type-card pdf selected" onclick="selectExportType('pdf')">
+                                <div class="icon">📕</div>
+                                <h4>PDF形式</h4>
+                                <p>印刷用レイアウト・請求書・報告書向け</p>
+                            </div>
+                            <div class="export-type-card excel" onclick="selectExportType('excel')">
+                                <div class="icon">📗</div>
+                                <h4>Excel形式</h4>
+                                <p>データ分析・編集・集計向け</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Selection -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h3>テンプレート選択</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="template-list">
+                            <label class="template-item selected">
+                                <input type="radio" name="template" value="standard" checked onchange="selectTemplate(this.value)">
+                                <div class="template-info">
+                                    <h5>標準テンプレート</h5>
+                                    <p>基本的な予算表（見積項目・金額・粗利）</p>
+                                </div>
+                            </label>
+                            <label class="template-item">
+                                <input type="radio" name="template" value="detailed" onchange="selectTemplate(this.value)">
+                                <div class="template-info">
+                                    <h5>詳細テンプレート</h5>
+                                    <p>科目別内訳・協力業者情報を含む</p>
+                                </div>
+                            </label>
+                            <label class="template-item">
+                                <input type="radio" name="template" value="summary" onchange="selectTemplate(this.value)">
+                                <div class="template-info">
+                                    <h5>サマリーテンプレート</h5>
+                                    <p>科目別集計のみ（経営報告用）</p>
+                                </div>
+                            </label>
+                            <label class="template-item">
+                                <input type="radio" name="template" value="comparison" onchange="selectTemplate(this.value)">
+                                <div class="template-info">
+                                    <h5>比較テンプレート</h5>
+                                    <p>見積金額と実行予算の比較表</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Selection -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h3>出力データの選択</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>対象案件</label>
+                            <select id="projectSelect" onchange="updatePreview()">
+                                <option value="">案件を選択してください</option>
+                                <option value="1">PRJ-2024-001 - 東京タワー改修工事</option>
+                                <option value="2">PRJ-2024-002 - 大阪城外壁塗装</option>
+                                <option value="3">PRJ-2024-003 - 名古屋駅前ビル新築</option>
+                                <option value="4">PRJ-2024-004 - 福岡ドーム設備更新</option>
+                                <option value="5">PRJ-2024-005 - 札幌商業施設リノベ</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>開始日</label>
+                                <input type="date" id="startDate" onchange="updatePreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>終了日</label>
+                                <input type="date" id="endDate" onchange="updatePreview()">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>含める項目</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="includeEstimate" checked onchange="updatePreview()">
+                                    <label for="includeEstimate">見積金額</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="includeBudget" checked onchange="updatePreview()">
+                                    <label for="includeBudget">実行予算</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="includeProfit" checked onchange="updatePreview()">
+                                    <label for="includeProfit">粗利情報</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="includeCategory" onchange="updatePreview()">
+                                    <label for="includeCategory">科目別内訳</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="includeVendor" onchange="updatePreview()">
+                                    <label for="includeVendor">協力業者情報</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Actions -->
+                <div class="export-actions">
+                    <button class="btn btn-secondary" onclick="resetSettings()">
+                        🔄 リセット
+                    </button>
+                    <button class="btn btn-primary btn-pdf" id="exportBtn" onclick="startExport()">
+                        📕 PDFを出力
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column - Preview & History -->
+            <div class="preview-column">
+                <!-- Preview -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h3>プレビュー</h3>
+                        <button class="nav-btn" onclick="refreshPreview()">🔄 更新</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="preview-container">
+                            <div class="preview-placeholder" id="previewPlaceholder">
+                                <div class="icon">📄</div>
+                                <p>案件を選択するとプレビューが表示されます</p>
+                            </div>
+                            <div class="preview-content" id="previewContent" style="display: none;">
+                                <!-- Dynamic preview content -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export History -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>出力履歴</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-list">
+                            <div class="history-item">
+                                <div class="history-icon pdf">📕</div>
+                                <div class="history-info">
+                                    <h5>東京タワー改修工事_予算表.pdf</h5>
+                                    <p>2024/01/10 14:30 • 2.3MB</p>
+                                </div>
+                                <div class="history-actions">
+                                    <button class="history-btn" title="ダウンロード" onclick="downloadHistory(1)">⬇️</button>
+                                    <button class="history-btn" title="削除" onclick="deleteHistory(1)">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="history-item">
+                                <div class="history-icon excel">📗</div>
+                                <div class="history-info">
+                                    <h5>大阪城外壁塗装_詳細.xlsx</h5>
+                                    <p>2024/01/09 10:15 • 1.8MB</p>
+                                </div>
+                                <div class="history-actions">
+                                    <button class="history-btn" title="ダウンロード" onclick="downloadHistory(2)">⬇️</button>
+                                    <button class="history-btn" title="削除" onclick="deleteHistory(2)">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="history-item">
+                                <div class="history-icon pdf">📕</div>
+                                <div class="history-info">
+                                    <h5>月次予算サマリー_202401.pdf</h5>
+                                    <p>2024/01/08 16:45 • 1.2MB</p>
+                                </div>
+                                <div class="history-actions">
+                                    <button class="history-btn" title="ダウンロード" onclick="downloadHistory(3)">⬇️</button>
+                                    <button class="history-btn" title="削除" onclick="deleteHistory(3)">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Progress Modal -->
+    <div class="modal-overlay" id="progressModal">
+        <div class="modal">
+            <div class="modal-icon processing" id="modalIcon">⏳</div>
+            <h3 id="modalTitle">出力処理中...</h3>
+            <p id="modalMessage">PDFファイルを生成しています。しばらくお待ちください。</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="modal-actions" id="modalActions" style="display: none;">
+                <button class="modal-btn modal-btn-secondary" onclick="closeModal()">閉じる</button>
+                <button class="modal-btn modal-btn-primary" id="downloadBtn" onclick="downloadFile()">ダウンロード</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <span class="notification-icon">✓</span>
+        <span class="notification-text" id="notificationText"></span>
+    </div>
+
+    <script>
+        // State
+        let currentExportType = 'pdf';
+        let currentTemplate = 'standard';
+        let isProcessing = false;
+
+        // Sample project data
+        const projectData = {
+            '1': {
+                name: '東京タワー改修工事',
+                customer: '東京タワー株式会社',
+                estimateTotal: 15000000,
+                budgetTotal: 12500000,
+                items: [
+                    { name: '足場設置工事', spec: '枠組足場', quantity: 1, unit: '式', estimate: 2000000, budget: 1800000, category: '外注費' },
+                    { name: '外壁塗装', spec: 'フッ素樹脂塗料', quantity: 500, unit: '㎡', estimate: 5000000, budget: 4200000, category: '外注費' },
+                    { name: '防水工事', spec: 'ウレタン防水', quantity: 200, unit: '㎡', estimate: 3000000, budget: 2500000, category: '材料費' },
+                    { name: '電気設備更新', spec: '照明LED化', quantity: 1, unit: '式', estimate: 3000000, budget: 2500000, category: '外注費' },
+                    { name: '現場管理費', spec: '', quantity: 1, unit: '式', estimate: 2000000, budget: 1500000, category: '経費' }
+                ]
+            },
+            '2': {
+                name: '大阪城外壁塗装',
+                customer: '大阪市建設局',
+                estimateTotal: 8500000,
+                budgetTotal: 7200000,
+                items: [
+                    { name: '仮設工事', spec: '足場', quantity: 1, unit: '式', estimate: 1500000, budget: 1300000, category: '外注費' },
+                    { name: '下地処理', spec: 'ケレン・パテ処理', quantity: 800, unit: '㎡', estimate: 2000000, budget: 1700000, category: '労務費' },
+                    { name: '塗装工事', spec: 'シリコン塗料3回塗り', quantity: 800, unit: '㎡', estimate: 4000000, budget: 3400000, category: '材料費' },
+                    { name: '諸経費', spec: '', quantity: 1, unit: '式', estimate: 1000000, budget: 800000, category: '経費' }
+                ]
+            },
+            '3': {
+                name: '名古屋駅前ビル新築',
+                customer: '名古屋開発株式会社',
+                estimateTotal: 250000000,
+                budgetTotal: 210000000,
+                items: [
+                    { name: '基礎工事', spec: '杭基礎', quantity: 1, unit: '式', estimate: 50000000, budget: 42000000, category: '外注費' },
+                    { name: '躯体工事', spec: 'RC造10階建', quantity: 1, unit: '式', estimate: 100000000, budget: 85000000, category: '外注費' },
+                    { name: '外装工事', spec: 'ALC+タイル', quantity: 1, unit: '式', estimate: 40000000, budget: 33000000, category: '材料費' },
+                    { name: '内装工事', spec: '事務所仕様', quantity: 1, unit: '式', estimate: 35000000, budget: 30000000, category: '外注費' },
+                    { name: '設備工事', spec: '空調・給排水・電気', quantity: 1, unit: '式', estimate: 25000000, budget: 20000000, category: '機械費' }
+                ]
+            },
+            '4': {
+                name: '福岡ドーム設備更新',
+                customer: '福岡ソフトバンクホークス',
+                estimateTotal: 45000000,
+                budgetTotal: 38000000,
+                items: [
+                    { name: '空調機器更新', spec: '大型空調機', quantity: 10, unit: '台', estimate: 20000000, budget: 17000000, category: '機械費' },
+                    { name: '電気設備更新', spec: '高圧受変電設備', quantity: 1, unit: '式', estimate: 15000000, budget: 12500000, category: '機械費' },
+                    { name: '配管工事', spec: '冷媒配管更新', quantity: 1, unit: '式', estimate: 8000000, budget: 6800000, category: '外注費' },
+                    { name: '試運転調整', spec: '', quantity: 1, unit: '式', estimate: 2000000, budget: 1700000, category: '経費' }
+                ]
+            },
+            '5': {
+                name: '札幌商業施設リノベ',
+                customer: '北海道商事株式会社',
+                estimateTotal: 32000000,
+                budgetTotal: 27500000,
+                items: [
+                    { name: '解体工事', spec: '内装解体', quantity: 1, unit: '式', estimate: 5000000, budget: 4200000, category: '外注費' },
+                    { name: '内装工事', spec: '商業施設仕様', quantity: 500, unit: '㎡', estimate: 15000000, budget: 13000000, category: '材料費' },
+                    { name: '電気工事', spec: '照明・コンセント', quantity: 1, unit: '式', estimate: 7000000, budget: 5800000, category: '外注費' },
+                    { name: '設備工事', spec: '空調・給排水', quantity: 1, unit: '式', estimate: 5000000, budget: 4500000, category: '機械費' }
+                ]
+            }
+        };
+
+        // XSS Prevention
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Format number with commas
+        function formatNumber(num) {
+            return num.toLocaleString('ja-JP');
+        }
+
+        // Select export type
+        function selectExportType(type) {
+            currentExportType = type;
+            document.querySelectorAll('.export-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`.export-type-card.${type}`).classList.add('selected');
+
+            const exportBtn = document.getElementById('exportBtn');
+            if (type === 'pdf') {
+                exportBtn.className = 'btn btn-primary btn-pdf';
+                exportBtn.innerHTML = '📕 PDFを出力';
+            } else {
+                exportBtn.className = 'btn btn-primary btn-excel';
+                exportBtn.innerHTML = '📗 Excelを出力';
+            }
+            updatePreview();
+        }
+
+        // Select template
+        function selectTemplate(template) {
+            currentTemplate = template;
+            document.querySelectorAll('.template-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`input[value="${template}"]`).closest('.template-item').classList.add('selected');
+            updatePreview();
+        }
+
+        // Update preview
+        function updatePreview() {
+            const projectId = document.getElementById('projectSelect').value;
+            const placeholder = document.getElementById('previewPlaceholder');
+            const content = document.getElementById('previewContent');
+
+            if (!projectId) {
+                placeholder.style.display = 'flex';
+                content.style.display = 'none';
+                return;
+            }
+
+            const project = projectData[projectId];
+            if (!project) return;
+
+            placeholder.style.display = 'none';
+            content.style.display = 'block';
+
+            const includeEstimate = document.getElementById('includeEstimate').checked;
+            const includeBudget = document.getElementById('includeBudget').checked;
+            const includeProfit = document.getElementById('includeProfit').checked;
+            const includeCategory = document.getElementById('includeCategory').checked;
+
+            let html = `
+                <div class="preview-header">
+                    <h4>${escapeHtml(project.name)}</h4>
+                    <p>顧客: ${escapeHtml(project.customer)} | 出力日: ${new Date().toLocaleDateString('ja-JP')}</p>
+                </div>
+            `;
+
+            // Build table based on template
+            if (currentTemplate === 'summary') {
+                // Category summary
+                const categoryTotals = {};
+                project.items.forEach(item => {
+                    if (!categoryTotals[item.category]) {
+                        categoryTotals[item.category] = { estimate: 0, budget: 0 };
+                    }
+                    categoryTotals[item.category].estimate += item.estimate;
+                    categoryTotals[item.category].budget += item.budget;
+                });
+
+                html += `<table class="preview-table">
+                    <thead>
+                        <tr>
+                            <th>科目</th>
+                            ${includeEstimate ? '<th class="number">見積金額</th>' : ''}
+                            ${includeBudget ? '<th class="number">実行予算</th>' : ''}
+                            ${includeProfit ? '<th class="number">差額</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                Object.entries(categoryTotals).forEach(([category, totals]) => {
+                    const diff = totals.estimate - totals.budget;
+                    html += `<tr>
+                        <td>${escapeHtml(category)}</td>
+                        ${includeEstimate ? `<td class="number">¥${formatNumber(totals.estimate)}</td>` : ''}
+                        ${includeBudget ? `<td class="number">¥${formatNumber(totals.budget)}</td>` : ''}
+                        ${includeProfit ? `<td class="number">¥${formatNumber(diff)}</td>` : ''}
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+            } else {
+                // Standard/Detailed table
+                html += `<table class="preview-table">
+                    <thead>
+                        <tr>
+                            <th>項目名</th>
+                            ${currentTemplate === 'detailed' ? '<th>規格</th>' : ''}
+                            <th class="number">数量</th>
+                            ${includeEstimate ? '<th class="number">見積金額</th>' : ''}
+                            ${includeBudget ? '<th class="number">実行予算</th>' : ''}
+                            ${includeCategory && currentTemplate === 'detailed' ? '<th>科目</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                project.items.forEach(item => {
+                    html += `<tr>
+                        <td>${escapeHtml(item.name)}</td>
+                        ${currentTemplate === 'detailed' ? `<td>${escapeHtml(item.spec)}</td>` : ''}
+                        <td class="number">${item.quantity} ${item.unit}</td>
+                        ${includeEstimate ? `<td class="number">¥${formatNumber(item.estimate)}</td>` : ''}
+                        ${includeBudget ? `<td class="number">¥${formatNumber(item.budget)}</td>` : ''}
+                        ${includeCategory && currentTemplate === 'detailed' ? `<td>${escapeHtml(item.category)}</td>` : ''}
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+            }
+
+            // Summary section
+            if (includeProfit) {
+                const profit = project.estimateTotal - project.budgetTotal;
+                const profitRate = ((profit / project.estimateTotal) * 100).toFixed(1);
+
+                html += `
+                    <div class="preview-summary">
+                        ${includeEstimate ? `<div class="preview-summary-row">
+                            <span>見積合計</span>
+                            <span>¥${formatNumber(project.estimateTotal)}</span>
+                        </div>` : ''}
+                        ${includeBudget ? `<div class="preview-summary-row">
+                            <span>実行予算合計</span>
+                            <span>¥${formatNumber(project.budgetTotal)}</span>
+                        </div>` : ''}
+                        <div class="preview-summary-row total">
+                            <span>粗利額 (粗利率)</span>
+                            <span>¥${formatNumber(profit)} (${profitRate}%)</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+        }
+
+        // Refresh preview
+        function refreshPreview() {
+            updatePreview();
+            showNotification('プレビューを更新しました', 'success');
+        }
+
+        // Reset settings
+        function resetSettings() {
+            document.getElementById('projectSelect').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('includeEstimate').checked = true;
+            document.getElementById('includeBudget').checked = true;
+            document.getElementById('includeProfit').checked = true;
+            document.getElementById('includeCategory').checked = false;
+            document.getElementById('includeVendor').checked = false;
+            selectExportType('pdf');
+            selectTemplate('standard');
+            updatePreview();
+            showNotification('設定をリセットしました', 'success');
+        }
+
+        // Start export
+        function startExport() {
+            const projectId = document.getElementById('projectSelect').value;
+            if (!projectId) {
+                showNotification('案件を選択してください', 'error');
+                return;
+            }
+
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const modal = document.getElementById('progressModal');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalActions = document.getElementById('modalActions');
+            const progressFill = document.getElementById('progressFill');
+
+            modal.classList.add('active');
+            modalIcon.className = 'modal-icon processing';
+            modalIcon.textContent = '⏳';
+            modalTitle.textContent = '出力処理中...';
+            modalMessage.textContent = `${currentExportType.toUpperCase()}ファイルを生成しています。しばらくお待ちください。`;
+            modalActions.style.display = 'none';
+            progressFill.style.width = '0%';
+
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 95) progress = 95;
+                progressFill.style.width = progress + '%';
+            }, 200);
+
+            // Simulate completion
+            setTimeout(() => {
+                clearInterval(interval);
+                progressFill.style.width = '100%';
+
+                setTimeout(() => {
+                    modalIcon.className = 'modal-icon success';
+                    modalIcon.textContent = '✅';
+                    modalTitle.textContent = '出力完了';
+                    modalMessage.textContent = 'ファイルの生成が完了しました。ダウンロードボタンをクリックしてください。';
+                    modalActions.style.display = 'flex';
+                    isProcessing = false;
+                }, 300);
+            }, 2000);
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('progressModal').classList.remove('active');
+        }
+
+        // Download file
+        function downloadFile() {
+            const projectId = document.getElementById('projectSelect').value;
+            const project = projectData[projectId];
+
+            // Create dummy file download
+            const fileName = `${project.name}_予算表.${currentExportType === 'pdf' ? 'pdf' : 'xlsx'}`;
+
+            // In production, this would be a real file download
+            // For demo, we'll create a simple text blob
+            let content;
+            if (currentExportType === 'excel') {
+                content = generateExcelContent(project);
+            } else {
+                content = generatePDFContent(project);
+            }
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            closeModal();
+            showNotification(`${fileName} をダウンロードしました`, 'success');
+        }
+
+        // Generate Excel content (CSV for demo)
+        function generateExcelContent(project) {
+            let csv = '項目名,規格,数量,単位,見積金額,実行予算,科目\n';
+            project.items.forEach(item => {
+                csv += `${item.name},${item.spec},${item.quantity},${item.unit},${item.estimate},${item.budget},${item.category}\n`;
+            });
+            csv += `\n合計,,,,"${project.estimateTotal}","${project.budgetTotal}",\n`;
+            csv += `粗利額,,,,,"${project.estimateTotal - project.budgetTotal}",\n`;
+            return csv;
+        }
+
+        // Generate PDF content (text for demo)
+        function generatePDFContent(project) {
+            let text = `===== ${project.name} 予算表 =====\n\n`;
+            text += `顧客: ${project.customer}\n`;
+            text += `出力日: ${new Date().toLocaleDateString('ja-JP')}\n\n`;
+            text += '--- 明細 ---\n';
+            project.items.forEach(item => {
+                text += `${item.name}: ¥${formatNumber(item.budget)} (見積: ¥${formatNumber(item.estimate)})\n`;
+            });
+            text += `\n--- 集計 ---\n`;
+            text += `見積合計: ¥${formatNumber(project.estimateTotal)}\n`;
+            text += `実行予算合計: ¥${formatNumber(project.budgetTotal)}\n`;
+            text += `粗利額: ¥${formatNumber(project.estimateTotal - project.budgetTotal)}\n`;
+            return text;
+        }
+
+        // Download history
+        function downloadHistory(id) {
+            showNotification('過去の出力ファイルをダウンロードしています...', 'success');
+        }
+
+        // Delete history
+        function deleteHistory(id) {
+            if (confirm('この出力履歴を削除しますか？')) {
+                showNotification('出力履歴を削除しました', 'success');
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            const notificationIcon = notification.querySelector('.notification-icon');
+
+            notification.className = `notification ${type}`;
+            notificationText.textContent = message;
+            notificationIcon.textContent = type === 'success' ? '✓' : '✕';
+
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default dates
+            const today = new Date();
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+            document.getElementById('startDate').value = monthAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>

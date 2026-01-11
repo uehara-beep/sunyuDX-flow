@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>承認管理 - sunyuTECH-DX</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #E8E4DF;
+      color: #2D2D2D;
+      min-height: 100vh;
+    }
+
+    /* ヘッダー */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.7);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1D1D1F;
+    }
+
+    .user-badge {
+      padding: 8px 16px;
+      background: #0a2540;
+      border-radius: 50px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* タブ */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      background: rgba(0,0,0,0.02);
+    }
+
+    .tab-btn.active {
+      background: #0a2540;
+      border-color: #0a2540;
+      color: #fff;
+    }
+
+    .tab-badge {
+      padding: 2px 8px;
+      background: rgba(255,107,0,0.2);
+      border-radius: 10px;
+      font-size: 12px;
+      color: #FF6B00;
+    }
+
+    .tab-btn.active .tab-badge {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    /* レイアウト */
+    .approval-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+    }
+
+    /* 承認待ちリスト */
+    .approval-list-card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .approval-list-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .approval-list-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .approval-list {
+      max-height: calc(100vh - 320px);
+      overflow-y: auto;
+    }
+
+    .approval-item {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .approval-item:hover {
+      background: rgba(255,107,0,0.02);
+    }
+
+    .approval-item.selected {
+      background: rgba(255,107,0,0.05);
+      border-left: 3px solid #FF6B00;
+    }
+
+    .approval-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .approval-project-code {
+      font-family: 'SF Mono', monospace;
+      font-size: 12px;
+      color: #FF6B00;
+    }
+
+    .approval-stage-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .approval-stage-badge.pending_manager {
+      background: rgba(245,158,11,0.1);
+      color: #f59e0b;
+    }
+
+    .approval-stage-badge.pending_executive {
+      background: rgba(139,92,246,0.1);
+      color: #8b5cf6;
+    }
+
+    .approval-project-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .approval-client-name {
+      font-size: 13px;
+      color: rgba(0,0,0,0.5);
+      margin-bottom: 12px;
+    }
+
+    .approval-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+    }
+
+    .approval-amount {
+      font-weight: 600;
+      color: rgba(0,0,0,0.7);
+    }
+
+    /* 詳細パネル */
+    .detail-panel {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 100px;
+    }
+
+    .detail-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .detail-body {
+      padding: 24px;
+    }
+
+    .detail-section {
+      margin-bottom: 24px;
+    }
+
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .detail-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .detail-info-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-info-label {
+      color: rgba(0,0,0,0.5);
+      font-size: 13px;
+    }
+
+    .detail-info-value {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .detail-info-value.highlight {
+      color: #FF6B00;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .profit-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .profit-badge.good {
+      background: rgba(16,185,129,0.1);
+      color: #10b981;
+    }
+
+    .profit-badge.warning {
+      background: rgba(245,158,11,0.1);
+      color: #f59e0b;
+    }
+
+    .profit-badge.danger {
+      background: rgba(239,68,68,0.1);
+      color: #ef4444;
+    }
+
+    /* タイムライン */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(0,0,0,0.1);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .timeline-dot.requested { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+    .timeline-dot.approved { border-color: #10b981; background: rgba(16,185,129,0.1); }
+    .timeline-dot.rejected { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+    .timeline-dot.pending { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
+
+    .timeline-content {
+      background: rgba(0,0,0,0.02);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .timeline-action {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .timeline-user {
+      font-size: 12px;
+      color: rgba(0,0,0,0.5);
+    }
+
+    .timeline-date {
+      font-size: 11px;
+      color: rgba(0,0,0,0.4);
+      margin-top: 4px;
+    }
+
+    .timeline-comment {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #fff;
+      border-radius: 6px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.7);
+      border-left: 3px solid #FF6B00;
+    }
+
+    /* コメント入力 */
+    .comment-input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 80px;
+      margin-bottom: 16px;
+    }
+
+    .comment-input:focus {
+      outline: none;
+      border-color: #FF6B00;
+      background: #fff;
+    }
+
+    /* アクションボタン */
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-approve {
+      flex: 1;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-approve:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+
+    .btn-reject {
+      flex: 1;
+      padding: 14px 24px;
+      background: transparent;
+      border: 1px solid #ef4444;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #ef4444;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-reject:hover {
+      background: rgba(239,68,68,0.05);
+    }
+
+    /* 空状態 */
+    .empty-detail {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(0,0,0,0.4);
+    }
+
+    .empty-detail-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-detail-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.5);
+    }
+
+    /* バナー */
+    .banner {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      padding: 16px 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transition: top 0.3s ease;
+    }
+
+    .banner.show {
+      top: 20px;
+    }
+
+    .banner.success {
+      background: #d1fae5;
+      border: 1px solid #22c55e;
+      color: #065f46;
+    }
+
+    .banner.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 1024px) {
+      .approval-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tabs {
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- バナー -->
+  <div class="banner success" id="successBanner">
+    <span>✅</span>
+    <span id="successMessage">承認しました</span>
+  </div>
+
+  <div class="banner error" id="errorBanner">
+    <span>⚠️</span>
+    <span id="errorMessage">エラーが発生しました</span>
+  </div>
+
+  <!-- ヘッダー -->
+  <header class="page-header">
+    <div class="header-left">
+      <a href="budget-list.html" class="back-btn">← 実行予算一覧</a>
+      <h1 class="page-title">承認管理</h1>
+    </div>
+    <div class="user-badge">山田部長</div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <div class="main-content">
+    <!-- タブ -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pending_manager">
+        部長承認待ち
+        <span class="tab-badge" id="managerCount">3</span>
+      </button>
+      <button class="tab-btn" data-tab="pending_executive">
+        役員承認待ち
+        <span class="tab-badge" id="executiveCount">2</span>
+      </button>
+      <button class="tab-btn" data-tab="approved">
+        承認済み
+      </button>
+      <button class="tab-btn" data-tab="rejected">
+        却下
+      </button>
+    </div>
+
+    <!-- レイアウト -->
+    <div class="approval-layout">
+      <!-- 承認待ちリスト -->
+      <div class="approval-list-card">
+        <div class="approval-list-header">
+          <h2 class="approval-list-title">承認待ち案件</h2>
+        </div>
+        <div class="approval-list" id="approvalList">
+          <!-- 動的に挿入 -->
+        </div>
+      </div>
+
+      <!-- 詳細パネル -->
+      <div class="detail-panel">
+        <div class="detail-header">
+          <h3 class="detail-title">案件詳細</h3>
+        </div>
+        <div class="detail-body" id="detailBody">
+          <div class="empty-detail">
+            <div class="empty-detail-icon">📋</div>
+            <div class="empty-detail-title">案件を選択してください</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // グローバル変数
+    let approvalData = [];
+    let currentTab = 'pending_manager';
+    let selectedId = null;
+
+    // XSS対策
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
+    // 金額フォーマット
+    function formatAmount(num) {
+      return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // 日時フォーマット
+    function formatDateTime(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // サンプルデータ生成
+    function generateSampleData() {
+      return [
+        {
+          id: 1,
+          budget_id: 1,
+          project_code: '2026-001',
+          project_name: '長崎自動車道舗装補修工事',
+          client_name: 'NEXCO西日本',
+          estimate_amount: 12500000,
+          budget_amount: 9800000,
+          profit_rate: 21.6,
+          status: 'pending_manager',
+          requested_by: { id: 1, name: 'たく', role: 'sales' },
+          requested_at: '2026-01-11T10:00:00Z',
+          request_comment: '粗利率21.6%で問題ないと判断しました。早めの承認をお願いします。',
+          history: [
+            {
+              action: 'requested',
+              user: { id: 1, name: 'たく' },
+              timestamp: '2026-01-11T10:00:00Z',
+              comment: '承認申請しました'
+            }
+          ]
+        },
+        {
+          id: 2,
+          budget_id: 2,
+          project_code: '2026-002',
+          project_name: '福岡環状線橋梁点検業務',
+          client_name: '福岡市道路管理課',
+          estimate_amount: 8500000,
+          budget_amount: 6800000,
+          profit_rate: 20.0,
+          status: 'pending_manager',
+          requested_by: { id: 2, name: '山田', role: 'sales' },
+          requested_at: '2026-01-10T15:30:00Z',
+          request_comment: '前回同様の条件です。',
+          history: [
+            {
+              action: 'requested',
+              user: { id: 2, name: '山田' },
+              timestamp: '2026-01-10T15:30:00Z',
+              comment: '承認申請しました'
+            }
+          ]
+        },
+        {
+          id: 3,
+          budget_id: 3,
+          project_code: '2026-003',
+          project_name: '北九州舗装工事',
+          client_name: 'NEXCO九州',
+          estimate_amount: 25000000,
+          budget_amount: 20000000,
+          profit_rate: 20.0,
+          status: 'pending_manager',
+          requested_by: { id: 1, name: 'たく', role: 'sales' },
+          requested_at: '2026-01-09T09:00:00Z',
+          request_comment: '大型案件のため慎重に検討しました。',
+          history: [
+            {
+              action: 'requested',
+              user: { id: 1, name: 'たく' },
+              timestamp: '2026-01-09T09:00:00Z',
+              comment: '承認申請しました'
+            }
+          ]
+        },
+        {
+          id: 4,
+          budget_id: 4,
+          project_code: '2026-004',
+          project_name: '熊本県道整備工事',
+          client_name: '熊本県土木部',
+          estimate_amount: 15000000,
+          budget_amount: 11500000,
+          profit_rate: 23.3,
+          status: 'pending_executive',
+          requested_by: { id: 1, name: 'たく', role: 'sales' },
+          requested_at: '2026-01-08T14:00:00Z',
+          request_comment: '',
+          manager_approver: { id: 3, name: '山田部長', role: 'manager' },
+          manager_approved_at: '2026-01-09T10:00:00Z',
+          manager_comment: '内容確認しました。役員承認へ回します。',
+          history: [
+            {
+              action: 'requested',
+              user: { id: 1, name: 'たく' },
+              timestamp: '2026-01-08T14:00:00Z',
+              comment: '承認申請しました'
+            },
+            {
+              action: 'approved',
+              user: { id: 3, name: '山田部長' },
+              timestamp: '2026-01-09T10:00:00Z',
+              comment: '内容確認しました。役員承認へ回します。'
+            }
+          ]
+        },
+        {
+          id: 5,
+          budget_id: 5,
+          project_code: '2026-005',
+          project_name: '佐賀空港滑走路補修',
+          client_name: '佐賀県空港管理課',
+          estimate_amount: 45000000,
+          budget_amount: 35000000,
+          profit_rate: 22.2,
+          status: 'pending_executive',
+          requested_by: { id: 2, name: '山田', role: 'sales' },
+          requested_at: '2026-01-07T11:00:00Z',
+          request_comment: '空港案件のため特別対応が必要です。',
+          manager_approver: { id: 3, name: '山田部長', role: 'manager' },
+          manager_approved_at: '2026-01-08T09:00:00Z',
+          manager_comment: '問題ありません。',
+          history: [
+            {
+              action: 'requested',
+              user: { id: 2, name: '山田' },
+              timestamp: '2026-01-07T11:00:00Z',
+              comment: '空港案件のため特別対応が必要です。'
+            },
+            {
+              action: 'approved',
+              user: { id: 3, name: '山田部長' },
+              timestamp: '2026-01-08T09:00:00Z',
+              comment: '問題ありません。'
+            }
+          ]
+        }
+      ];
+    }
+
+    // 初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      approvalData = generateSampleData();
+      updateCounts();
+      renderList();
+      setupTabs();
+    });
+
+    // カウント更新
+    function updateCounts() {
+      const managerCount = approvalData.filter(a => a.status === 'pending_manager').length;
+      const executiveCount = approvalData.filter(a => a.status === 'pending_executive').length;
+      document.getElementById('managerCount').textContent = managerCount;
+      document.getElementById('executiveCount').textContent = executiveCount;
+    }
+
+    // リスト描画
+    function renderList() {
+      const list = document.getElementById('approvalList');
+      const filtered = approvalData.filter(a => a.status === currentTab);
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div style="text-align: center; padding: 60px 20px; color: rgba(0,0,0,0.4);">
+            <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+            <div>承認待ちの案件はありません</div>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = filtered.map(item => {
+        const stageLabels = {
+          pending_manager: '部長承認待ち',
+          pending_executive: '役員承認待ち'
+        };
+
+        return `
+          <div class="approval-item ${selectedId === item.id ? 'selected' : ''}"
+               onclick="selectItem(${item.id})">
+            <div class="approval-item-header">
+              <span class="approval-project-code">${escapeHtml(item.project_code)}</span>
+              <span class="approval-stage-badge ${item.status}">
+                ${stageLabels[item.status] || ''}
+              </span>
+            </div>
+            <div class="approval-project-name">${escapeHtml(item.project_name)}</div>
+            <div class="approval-client-name">${escapeHtml(item.client_name)}</div>
+            <div class="approval-meta">
+              <span class="approval-amount">¥${formatAmount(item.estimate_amount)}</span>
+              <span>粗利率 ${item.profit_rate}%</span>
+              <span>申請: ${escapeHtml(item.requested_by.name)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // タブ設定
+    function setupTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentTab = btn.dataset.tab;
+          selectedId = null;
+          renderList();
+          renderDetail();
+        });
+      });
+    }
+
+    // アイテム選択
+    function selectItem(id) {
+      selectedId = id;
+      renderList();
+      renderDetail();
+    }
+
+    // 詳細描画
+    function renderDetail() {
+      const detailBody = document.getElementById('detailBody');
+
+      if (!selectedId) {
+        detailBody.innerHTML = `
+          <div class="empty-detail">
+            <div class="empty-detail-icon">📋</div>
+            <div class="empty-detail-title">案件を選択してください</div>
+          </div>
+        `;
+        return;
+      }
+
+      const item = approvalData.find(a => a.id === selectedId);
+      if (!item) return;
+
+      const profitClass = item.profit_rate >= 20 ? 'good'
+        : item.profit_rate >= 10 ? 'warning'
+        : 'danger';
+
+      detailBody.innerHTML = `
+        <div class="detail-section">
+          <div class="detail-section-title">案件情報</div>
+          <div class="detail-info-row">
+            <span class="detail-info-label">案件番号</span>
+            <span class="detail-info-value">${escapeHtml(item.project_code)}</span>
+          </div>
+          <div class="detail-info-row">
+            <span class="detail-info-label">案件名</span>
+            <span class="detail-info-value">${escapeHtml(item.project_name)}</span>
+          </div>
+          <div class="detail-info-row">
+            <span class="detail-info-label">顧客名</span>
+            <span class="detail-info-value">${escapeHtml(item.client_name)}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">金額情報</div>
+          <div class="detail-info-row">
+            <span class="detail-info-label">見積金額</span>
+            <span class="detail-info-value highlight">¥${formatAmount(item.estimate_amount)}</span>
+          </div>
+          <div class="detail-info-row">
+            <span class="detail-info-label">実行予算額</span>
+            <span class="detail-info-value">¥${formatAmount(item.budget_amount)}</span>
+          </div>
+          <div class="detail-info-row">
+            <span class="detail-info-label">粗利率</span>
+            <span class="profit-badge ${profitClass}">${item.profit_rate}%</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">承認履歴</div>
+          <div class="timeline">
+            ${item.history.map(h => {
+              const actionLabels = {
+                requested: '📝 承認申請',
+                approved: '✅ 承認',
+                rejected: '❌ 却下'
+              };
+              return `
+                <div class="timeline-item">
+                  <div class="timeline-dot ${h.action}"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-action">${actionLabels[h.action] || h.action}</div>
+                    <div class="timeline-user">${escapeHtml(h.user.name)}</div>
+                    <div class="timeline-date">${formatDateTime(h.timestamp)}</div>
+                    ${h.comment ? `<div class="timeline-comment">${escapeHtml(h.comment)}</div>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        ${(item.status === 'pending_manager' || item.status === 'pending_executive') ? `
+          <div class="detail-section">
+            <div class="detail-section-title">承認コメント</div>
+            <textarea class="comment-input" id="approvalComment" placeholder="コメントを入力（任意）"></textarea>
+            <div class="action-buttons">
+              <button class="btn-approve" onclick="approveItem(${item.id})">
+                ✅ 承認する
+              </button>
+              <button class="btn-reject" onclick="rejectItem(${item.id})">
+                ❌ 却下する
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    // 承認
+    function approveItem(id) {
+      const comment = document.getElementById('approvalComment')?.value || '';
+      const item = approvalData.find(a => a.id === id);
+      if (!item) return;
+
+      // ステータス更新
+      if (item.status === 'pending_manager') {
+        item.status = 'pending_executive';
+        item.manager_approved_at = new Date().toISOString();
+        item.manager_comment = comment;
+      } else if (item.status === 'pending_executive') {
+        item.status = 'approved';
+        item.executive_approved_at = new Date().toISOString();
+        item.executive_comment = comment;
+      }
+
+      // 履歴追加
+      item.history.push({
+        action: 'approved',
+        user: { id: 3, name: '山田部長' },
+        timestamp: new Date().toISOString(),
+        comment: comment || '承認しました'
+      });
+
+      selectedId = null;
+      updateCounts();
+      renderList();
+      renderDetail();
+      showBanner('success', '承認しました');
+    }
+
+    // 却下
+    function rejectItem(id) {
+      const comment = document.getElementById('approvalComment')?.value || '';
+      if (!comment) {
+        showBanner('error', '却下理由を入力してください');
+        return;
+      }
+
+      const item = approvalData.find(a => a.id === id);
+      if (!item) return;
+
+      item.status = 'rejected';
+      item.history.push({
+        action: 'rejected',
+        user: { id: 3, name: '山田部長' },
+        timestamp: new Date().toISOString(),
+        comment: comment
+      });
+
+      selectedId = null;
+      updateCounts();
+      renderList();
+      renderDetail();
+      showBanner('success', '却下しました');
+    }
+
+    // バナー表示
+    function showBanner(type, message) {
+      const banner = document.getElementById(type === 'success' ? 'successBanner' : 'errorBanner');
+      const msgEl = document.getElementById(type === 'success' ? 'successMessage' : 'errorMessage');
+      msgEl.textContent = message;
+      banner.classList.add('show');
+      setTimeout(() => {
+        banner.classList.remove('show');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
