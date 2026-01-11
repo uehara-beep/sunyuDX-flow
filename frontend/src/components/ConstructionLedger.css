@@ -29,22 +29,23 @@
 }
 
 .project-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 20px;
   cursor: pointer;
   transition: all 0.2s;
+  color: #ffffff;
 }
 
 .project-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateX(4px);
+  box-shadow: 0 8px 20px rgba(10, 37, 64, 0.3);
 }
 
 .project-card.selected {
-  border-color: var(--theme-color);
-  background: rgba(0, 102, 204, 0.1);
+  border: 2px solid var(--theme-color);
+  background: rgba(0, 102, 204, 0.15);
 }
 
 .project-header {
@@ -145,10 +146,11 @@
 
 /* 詳細パネル */
 .detail-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 24px;
+  color: #ffffff;
 }
 
 .detail-header {
@@ -190,7 +192,7 @@
 }
 
 .cost-summary, .category-breakdown {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
@@ -293,10 +295,10 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  background: #0a2540;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .empty-detail .empty-icon {

@@ -8,11 +8,12 @@
 }
 
 .summary-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 20px;
   text-align: center;
+  color: #ffffff;
 }
 
 .summary-card.sent { border-color: rgba(245, 158, 11, 0.3); }
@@ -50,21 +51,23 @@
 }
 
 .invoice-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 20px;
   cursor: pointer;
   transition: all 0.2s;
+  color: #ffffff;
 }
 
 .invoice-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
+  box-shadow: 0 8px 20px rgba(10, 37, 64, 0.3);
 }
 
 .invoice-card.selected {
-  border-color: var(--theme-color);
-  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid var(--theme-color);
+  background: rgba(16, 185, 129, 0.15);
 }
 
 .invoice-header {
@@ -118,10 +121,11 @@
 
 /* 詳細パネル */
 .detail-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 24px;
+  color: #ffffff;
 }
 
 .detail-header {
@@ -209,10 +213,10 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  background: #0a2540;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .empty-detail .empty-icon {

@@ -49,10 +49,11 @@
 }
 
 .table-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   overflow: hidden;
+  color: #ffffff;
 }
 
 table {
@@ -94,10 +95,11 @@ td {
 }
 
 .summary-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 20px;
+  color: #ffffff;
 }
 
 .summary-item {

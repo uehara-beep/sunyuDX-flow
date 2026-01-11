@@ -2,10 +2,11 @@
 @import './Attendance.css';
 
 .form-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a2540;
+  border: none;
   border-radius: 16px;
   padding: 24px;
+  color: #ffffff;
 }
 
 .form-grid {
@@ -23,7 +24,7 @@
 
 .form-group label {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .form-group input,
