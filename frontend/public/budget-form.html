@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予算作成 | sunyuTECH-DX</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', sans-serif;
+            background-color: #E8E4DF;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0a2540 0%, #1a365d 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 1.25rem; }
+
+        .header-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-decoration: none;
+        }
+
+        .nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .main-content {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: #0a2540;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
+        }
+
+        .card-body { padding: 1.5rem; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #0a2540;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255,107,0,0.1);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+        }
+
+        .category-item {
+            text-align: center;
+        }
+
+        .category-item label {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-item input {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .summary-box {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .summary-row:last-child { border-bottom: none; }
+
+        .summary-row.total {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0a2540;
+            border-top: 2px solid #0a2540;
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+        }
+
+        .summary-row.profit {
+            color: #16a34a;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #0a2540;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B00 0%, #e55a00 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255,107,0,0.3);
+        }
+
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message.show { display: block; }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message.show { display: block; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>予算作成</h1>
+        <nav class="header-nav">
+            <a href="budget-list.html" class="nav-btn">← 一覧に戻る</a>
+            <span class="nav-btn" id="userInfo">ログイン中</span>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="success-message" id="successMessage">
+            予算を保存しました。一覧ページに戻ります...
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <form id="budgetForm" onsubmit="handleSubmit(event)">
+            <!-- 基本情報 -->
+            <div class="card">
+                <div class="card-header">基本情報</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="project_id">プロジェクト *</label>
+                        <select id="project_id" required>
+                            <option value="">プロジェクトを選択...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="estimate_amount">見積金額 *</label>
+                        <input type="number" id="estimate_amount" placeholder="0" required oninput="calculateSummary()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 科目別予算 -->
+            <div class="card">
+                <div class="card-header">科目別予算（5科目）</div>
+                <div class="card-body">
+                    <div class="category-grid">
+                        <div class="category-item">
+                            <label>材料費</label>
+                            <input type="number" id="material_total" placeholder="0" oninput="calculateSummary()">
+                        </div>
+                        <div class="category-item">
+                            <label>労務費</label>
+                            <input type="number" id="labor_total" placeholder="0" oninput="calculateSummary()">
+                        </div>
+                        <div class="category-item">
+                            <label>機械費</label>
+                            <input type="number" id="equipment_total" placeholder="0" oninput="calculateSummary()">
+                        </div>
+                        <div class="category-item">
+                            <label>外注費</label>
+                            <input type="number" id="subcontract_total" placeholder="0" oninput="calculateSummary()">
+                        </div>
+                        <div class="category-item">
+                            <label>経費</label>
+                            <input type="number" id="expense_total" placeholder="0" oninput="calculateSummary()">
+                        </div>
+                    </div>
+
+                    <div class="summary-box">
+                        <div class="summary-row">
+                            <span>見積金額</span>
+                            <span id="displayEstimate">¥0</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>実行予算合計</span>
+                            <span id="displayBudget">¥0</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>粗利額</span>
+                            <span id="displayProfit">¥0</span>
+                        </div>
+                        <div class="summary-row profit">
+                            <span>粗利率</span>
+                            <span id="displayProfitRate">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="location.href='budget-list.html'">キャンセル</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">保存</button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        // 認証チェック
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+            if (!token) {
+                window.location.href = 'login.html';
+                return null;
+            }
+
+            document.getElementById('userInfo').textContent = user.name || 'ユーザー';
+            return token;
+        }
+
+        // プロジェクト一覧取得
+        async function loadProjects() {
+            const token = checkAuth();
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/projects`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const projects = await response.json();
+
+                const select = document.getElementById('project_id');
+                projects.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.name} - ${p.client_name}`;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Failed to load projects:', err);
+            }
+        }
+
+        // 金額計算
+        function calculateSummary() {
+            const estimate = parseInt(document.getElementById('estimate_amount').value) || 0;
+            const material = parseInt(document.getElementById('material_total').value) || 0;
+            const labor = parseInt(document.getElementById('labor_total').value) || 0;
+            const equipment = parseInt(document.getElementById('equipment_total').value) || 0;
+            const subcontract = parseInt(document.getElementById('subcontract_total').value) || 0;
+            const expense = parseInt(document.getElementById('expense_total').value) || 0;
+
+            const budgetTotal = material + labor + equipment + subcontract + expense;
+            const profit = estimate - budgetTotal;
+            const profitRate = estimate > 0 ? (profit / estimate * 100) : 0;
+
+            document.getElementById('displayEstimate').textContent = `¥${estimate.toLocaleString()}`;
+            document.getElementById('displayBudget').textContent = `¥${budgetTotal.toLocaleString()}`;
+            document.getElementById('displayProfit').textContent = `¥${profit.toLocaleString()}`;
+            document.getElementById('displayProfitRate').textContent = `${profitRate.toFixed(1)}%`;
+
+            // 粗利率による色分け
+            const profitRateEl = document.getElementById('displayProfitRate');
+            if (profitRate < 10) {
+                profitRateEl.style.color = '#dc2626';
+            } else if (profitRate < 20) {
+                profitRateEl.style.color = '#d97706';
+            } else {
+                profitRateEl.style.color = '#16a34a';
+            }
+        }
+
+        // フォーム送信
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const token = checkAuth();
+            if (!token) return;
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = '保存中...';
+
+            const data = {
+                project_id: document.getElementById('project_id').value,
+                estimate_amount: parseInt(document.getElementById('estimate_amount').value) || 0,
+                material_total: parseInt(document.getElementById('material_total').value) || 0,
+                labor_total: parseInt(document.getElementById('labor_total').value) || 0,
+                equipment_total: parseInt(document.getElementById('equipment_total').value) || 0,
+                subcontract_total: parseInt(document.getElementById('subcontract_total').value) || 0,
+                expense_total: parseInt(document.getElementById('expense_total').value) || 0
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/api/budgets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || '保存に失敗しました');
+                }
+
+                document.getElementById('successMessage').classList.add('show');
+                setTimeout(() => {
+                    window.location.href = 'budget-list.html';
+                }, 1500);
+
+            } catch (err) {
+                document.getElementById('errorMessage').textContent = err.message;
+                document.getElementById('errorMessage').classList.add('show');
+                btn.disabled = false;
+                btn.textContent = '保存';
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProjects();
+        });
+    </script>
+</body>
+</html>
