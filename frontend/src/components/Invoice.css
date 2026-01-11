@@ -1,0 +1,230 @@
+/* Invoice - 事務部屋（グリーン）2カラム */
+@import './Attendance.css';
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.summary-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.summary-card.sent { border-color: rgba(245, 158, 11, 0.3); }
+.summary-card.paid { border-color: rgba(16, 185, 129, 0.3); }
+.summary-card.overdue { border-color: rgba(239, 68, 68, 0.3); }
+
+.summary-label {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.summary-card.sent .summary-value { color: #fbbf24; }
+.summary-card.paid .summary-value { color: #34d399; }
+.summary-card.overdue .summary-value { color: #f87171; }
+
+.two-column-invoice {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.invoice-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoice-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.invoice-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.invoice-card.selected {
+  border-color: var(--theme-color);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.invoice-no {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+}
+
+.invoice-project {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.invoice-client {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 12px;
+}
+
+.invoice-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--theme-color);
+  margin-bottom: 12px;
+}
+
+.invoice-dates {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.status-draft { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+.status-sent { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.status-paid { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.status-overdue { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+.status-badge.large {
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+/* 詳細パネル */
+.detail-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.detail-no {
+  font-size: 14px;
+  color: var(--theme-color);
+  font-family: monospace;
+}
+
+.detail-project {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.detail-info {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+
+.info-value {
+  font-weight: 500;
+}
+
+.info-value.amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--theme-color);
+}
+
+.detail-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  flex: 1;
+  padding: 14px 20px;
+  background: var(--theme-gradient);
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+}
+
+.empty-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.empty-detail .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 1024px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .two-column-invoice {
+    grid-template-columns: 1fr;
+  }
+}

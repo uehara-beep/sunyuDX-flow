@@ -5,130 +5,159 @@ import './HomePage.css';
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
+  const departments = [
+    {
+      id: 'sales',
+      name: '営業',
+      color: '#FF6B00',
+      gradientEnd: '#ffaa00',
+      description: '見積・受注・予算管理',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" width="32" height="32">
+          <defs>
+            <linearGradient id="salesGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FF6B00" />
+              <stop offset="100%" stopColor="#ffaa00" />
+            </linearGradient>
+          </defs>
+          <path stroke="url(#salesGrad)" d="M3 3v18h18" />
+          <path stroke="url(#salesGrad)" d="M18 9l-5-6-4 8-3-2" />
+        </svg>
+      ),
+      items: [
+        { name: '見積書アップロード', path: '/estimate/upload' },
+        { name: '実行予算作成', path: '/budget/create' },
+        { name: '案件一覧', path: '/projects' },
+      ],
+    },
+    {
+      id: 'construction',
+      name: '工事',
+      color: '#0066cc',
+      gradientEnd: '#00d4ff',
+      description: '現場・日報・原価管理',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" width="32" height="32">
+          <defs>
+            <linearGradient id="constGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0066cc" />
+              <stop offset="100%" stopColor="#00d4ff" />
+            </linearGradient>
+          </defs>
+          <path stroke="url(#constGrad)" d="M2 20h20M5 20V10l7-7 7 7v10M9 20v-6h6v6" />
+        </svg>
+      ),
+      items: [
+        { name: '工事台帳', path: '/construction/ledger' },
+        { name: '日報入力', path: '/daily/report' },
+        { name: '原価入力', path: '/cost/input' },
+      ],
+    },
+    {
+      id: 'management',
+      name: '経営',
+      color: '#8b5cf6',
+      gradientEnd: '#c084fc',
+      description: 'ダッシュボード・分析',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" width="32" height="32">
+          <defs>
+            <linearGradient id="mgmtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#c084fc" />
+            </linearGradient>
+          </defs>
+          <path stroke="url(#mgmtGrad)" d="M18 20V10M12 20V4M6 20v-6" />
+        </svg>
+      ),
+      items: [
+        { name: 'ダッシュボード', path: '/management/dashboard' },
+        { name: '利益率分析', path: '/management/analysis' },
+        { name: 'AI秘書', path: '/management/ai' },
+      ],
+    },
+    {
+      id: 'office',
+      name: '事務',
+      color: '#10b981',
+      gradientEnd: '#34d399',
+      description: '勤怠・経費・請求管理',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" width="32" height="32">
+          <defs>
+            <linearGradient id="officeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#34d399" />
+            </linearGradient>
+          </defs>
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="url(#officeGrad)" />
+          <path stroke="url(#officeGrad)" d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      ),
+      items: [
+        { name: '勤怠管理', path: '/office/attendance' },
+        { name: '経費精算', path: '/office/expense' },
+        { name: '請求書管理', path: '/office/invoice' },
+      ],
+    },
+  ];
+
   return (
     <div className="home-container">
       <header className="home-header">
         <div className="logo">
           <img src="/images/logo.png" alt="SunyuTECH" className="logo-image" />
         </div>
-        <nav className="nav">
-          <a href="/" className="nav-item">ホーム</a>
-          <a href="/projects" className="nav-item">工事管理</a>
-          <a href="#" className="nav-item">原価管理</a>
-          <a href="#" className="nav-item">ダッシュボード</a>
-        </nav>
+        <div className="header-right">
+          <span className="user-name">たく</span>
+        </div>
       </header>
 
-      <div className="hero-section">
+      <section className="hero-section">
         <h1 className="title">
-          sunyuTECHの<br />
+          <span className="title-white">sunyuTECHの</span>
           <span className="title-gradient">未来を創る</span>
         </h1>
-        <p className="subtitle">
-          Stripe級のUX。建設会社のイメージを塗り替える、次世代の原価管理システム
-        </p>
-      </div>
+        <p className="subtitle">次世代の原価管理システム</p>
+      </section>
 
-      <div className="grid">
-        <div className="card" onClick={() => navigate('/budget/create')}>
-          <div className="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3h18v18H3z" />
-              <path d="M3 9h18M9 21V9" />
-            </svg>
+      <section className="departments-grid">
+        {departments.map((dept) => (
+          <div
+            key={dept.id}
+            className="department-card"
+            style={{ '--dept-color': dept.color, '--dept-gradient-end': dept.gradientEnd } as React.CSSProperties}
+            onClick={() => navigate(`/${dept.id}`)}
+          >
+            <div className="card-top-line"></div>
+            <div className="card-header">
+              <div className="card-icon-wrapper">
+                {dept.icon}
+                <div className="icon-glow"></div>
+              </div>
+              <h2 className="card-title">{dept.name}</h2>
+            </div>
+            <p className="card-description">{dept.description}</p>
+            <ul className="card-items">
+              {dept.items.map((item, index) => (
+                <li
+                  key={index}
+                  className="card-item"
+                  onClick={(e) => { e.stopPropagation(); navigate(item.path); }}
+                >
+                  <span className="item-dot"></span>
+                  <span className="item-name">{item.name}</span>
+                  <span className="item-arrow">→</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <h3 className="card-title">実行予算から作る</h3>
-          <p className="card-description">
-            ゼロから積み上げ方式で実行予算を作成。AIが過去データから最適な予算を提案します。
-          </p>
-          <button className="card-button">開始する →</button>
-        </div>
+        ))}
+      </section>
 
-        <div className="card" onClick={() => navigate('/estimate/upload')}>
-          <div className="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-            </svg>
-          </div>
-          <h3 className="card-title">見積書から作る</h3>
-          <p className="card-description">
-            Excelをアップロードするだけ。AIが自動解析して実行予算に変換します。
-          </p>
-          <button className="card-button">開始する →</button>
-        </div>
-
-        <div className="card" onClick={() => navigate('/projects')}>
-          <div className="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 11H3v9h6v-9zM15 4H9v16h6V4zM21 6h-6v14h6V6z" />
-            </svg>
-          </div>
-          <h3 className="card-title">工事台帳</h3>
-          <p className="card-description">
-            リアルタイムで予実管理。赤字リスクを即座に検知します。
-          </p>
-          <button className="card-button">工事一覧へ →</button>
-        </div>
-
-        <div className="card" onClick={() => alert('AI秘書機能は近日公開予定です！')}>
-          <div className="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 6v6l4 2" />
-            </svg>
-          </div>
-          <h3 className="card-title">AI秘書</h3>
-          <p className="card-description">
-            音声で質問するだけ。AIが工事の状況を即座に回答します。
-          </p>
-          <button className="card-button">使ってみる →</button>
-        </div>
-      </div>
-
-      <div className="status-bar">
-        <div className="stat">
-          <div className="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#0066cc" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-          </div>
-          <div className="stat-value blue">23</div>
-          <div className="stat-label">Active Projects</div>
-        </div>
-        <div className="stat">
-          <div className="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B00" strokeWidth="2">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </div>
-          <div className="stat-value orange">18.5%</div>
-          <div className="stat-label">Profit Margin</div>
-        </div>
-        <div className="stat">
-          <div className="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-          </div>
-          <div className="stat-value green">¥125M</div>
-          <div className="stat-label">Revenue</div>
-        </div>
-        <div className="stat">
-          <div className="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          </div>
-          <div className="stat-value red">2</div>
-          <div className="stat-label">Alerts</div>
-        </div>
-      </div>
+      <footer className="home-footer">
+        <p>© 2026 株式会社サンユウテック</p>
+      </footer>
     </div>
   );
 };

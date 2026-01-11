@@ -1,0 +1,134 @@
+/* CostInput - 工事部屋（ブルー） */
+@import './DailyReport.css';
+
+.two-column {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.main-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ai-button {
+  margin-left: 12px;
+  padding: 4px 12px;
+  background: linear-gradient(90deg, #8b5cf6, #c084fc);
+  border: none;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-button:hover {
+  transform: scale(1.05);
+}
+
+.submit-button.full-width {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.badge {
+  padding: 6px 14px;
+  background: var(--theme-gradient);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.table-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+th {
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+td {
+  font-size: 14px;
+}
+
+.amount {
+  text-align: right;
+  font-weight: 600;
+  color: var(--theme-color);
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(0, 102, 204, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #00d4ff;
+}
+
+.summary-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.summary-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 2px solid var(--theme-color);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+}

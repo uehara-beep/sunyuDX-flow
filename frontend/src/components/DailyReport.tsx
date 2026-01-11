@@ -2,309 +2,178 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DailyReport.css';
 
-interface Photo {
-  id: string;
-  url: string;
-  description: string;
-}
-
-interface Report {
-  id: string;
-  date: string;
-  projectId: string;
-  projectName: string;
-  workType: string;
-  workHours: number;
-  workersCount: number;
-  progress: string;
-  weather: string;
-  photos: Photo[];
+interface WorkEntry {
+  id: number;
+  worker: string;
+  task: string;
+  hours: number;
 }
 
 const DailyReport: React.FC = () => {
   const navigate = useNavigate();
-  
-  const [projectId, setProjectId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [workType, setWorkType] = useState('');
-  const [workHours, setWorkHours] = useState(8);
-  const [workersCount, setWorkersCount] = useState(5);
-  const [progress, setProgress] = useState('');
+  const [project, setProject] = useState('');
   const [weather, setWeather] = useState('晴れ');
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [entries, setEntries] = useState<WorkEntry[]>([]);
+  const [progress, setProgress] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  const addEntry = () => {
+    setEntries([...entries, { id: Date.now(), worker: '', task: '', hours: 8 }]);
+  };
+
+  const updateEntry = (id: number, field: keyof WorkEntry, value: string | number) => {
+    setEntries(entries.map(e => e.id === id ? { ...e, [field]: value } : e));
+  };
+
+  const removeEntry = (id: number) => {
+    setEntries(entries.filter(e => e.id !== id));
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newPhotos: Photo[] = Array.from(e.target.files).map((file) => ({
-        id: Date.now().toString() + Math.random(),
-        url: URL.createObjectURL(file),
-        description: '',
-      }));
+      const newPhotos = Array.from(e.target.files).map(f => URL.createObjectURL(f));
       setPhotos([...photos, ...newPhotos]);
     }
   };
 
-  const updatePhotoDescription = (id: string, description: string) => {
-    setPhotos(photos.map(photo =>
-      photo.id === id ? { ...photo, description } : photo
-    ));
-  };
-
-  const removePhoto = (id: string) => {
-    setPhotos(photos.filter(photo => photo.id !== id));
-  };
-
-  const saveReport = async () => {
-    if (!projectId || !workType || !progress) {
-      alert('必須項目を入力してください');
-      return;
-    }
-
-    const newReport: Report = {
-      id: Date.now().toString(),
-      date,
-      projectId,
-      projectName: getProjectName(projectId),
-      workType,
-      workHours,
-      workersCount,
-      progress,
-      weather,
-      photos: [...photos],
-    };
-
-    setReports([newReport, ...reports]);
-
-    // フォームリセット
-    setWorkType('');
-    setProgress('');
-    setPhotos([]);
-
-    alert('日報を保存しました！');
-  };
-
-  const getProjectName = (id: string) => {
-    const projects: Record<string, string> = {
-      '1': '広島自動車道工事',
-      '2': '○○市水道管工事',
-      '3': '△△高速道路舗装工事',
-    };
-    return projects[id] || '';
+  const handleSubmit = () => {
+    alert('日報を保存しました');
+    navigate('/construction');
   };
 
   return (
-    <div className="daily-report-container">
-      <header className="report-header">
-        <div className="header-left">
-          <button className="back-button" onClick={() => navigate('/')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            戻る
-          </button>
-          <h1 className="page-title">日報入力</h1>
-        </div>
-        <div className="header-right">
-          <button className="btn btn-secondary" onClick={() => navigate('/projects')}>
-            工事一覧へ
-          </button>
-        </div>
+    <div className="page-container construction">
+      <header className="page-header">
+        <button className="back-button" onClick={() => navigate('/construction')}>
+          ← 工事部屋へ
+        </button>
+        <h1 className="page-title">📝 日報入力</h1>
+        <p className="page-subtitle">作業内容と進捗を記録</p>
       </header>
 
-      <div className="report-content">
-        {/* 入力フォーム */}
-        <div className="report-form-card">
-          <h2 className="section-title">📝 本日の作業報告</h2>
-          
-          <div className="form-grid">
-            <div className="form-group">
-              <label>工事選択 *</label>
-              <select
-                className="input"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-              >
-                <option value="">選択してください</option>
-                <option value="1">広島自動車道工事</option>
-                <option value="2">○○市水道管工事</option>
-                <option value="3">△△高速道路舗装工事</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>日付 *</label>
-              <input
-                type="date"
-                className="input"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+      <main className="page-content">
+        <section className="form-section">
+          <div className="section-header">
+            <div className="section-line"></div>
+            <h2>基本情報</h2>
+          </div>
+          <div className="form-card">
+            <div className="form-grid three-col">
+              <div className="form-group">
+                <label>日付</label>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>工事名</label>
+                <select value={project} onChange={e => setProject(e.target.value)}>
+                  <option value="">選択してください</option>
+                  <option value="1">広島自動車道 烏帽子橋工事</option>
+                  <option value="2">国道2号線 舗装工事</option>
+                  <option value="3">市道改良工事</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>天候</label>
+                <select value={weather} onChange={e => setWeather(e.target.value)}>
+                  <option value="晴れ">☀️ 晴れ</option>
+                  <option value="曇り">☁️ 曇り</option>
+                  <option value="雨">🌧️ 雨</option>
+                  <option value="雪">❄️ 雪</option>
+                </select>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="form-grid">
-            <div className="form-group">
-              <label>作業内容 *</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="床版防水工事"
-                value={workType}
-                onChange={(e) => setWorkType(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>天候</label>
-              <select
-                className="input"
-                value={weather}
-                onChange={(e) => setWeather(e.target.value)}
-              >
-                <option value="晴れ">☀️ 晴れ</option>
-                <option value="曇り">☁️ 曇り</option>
-                <option value="雨">🌧️ 雨</option>
-                <option value="雪">❄️ 雪</option>
-              </select>
-            </div>
+        <section className="form-section">
+          <div className="section-header">
+            <div className="section-line"></div>
+            <h2>作業員・作業内容</h2>
+            <button className="add-button" onClick={addEntry}>+ 追加</button>
           </div>
-
-          <div className="form-grid">
-            <div className="form-group">
-              <label>作業時間</label>
-              <input
-                type="number"
-                className="input"
-                value={workHours}
-                onChange={(e) => setWorkHours(Number(e.target.value))}
-              />
-              <span className="unit">時間</span>
-            </div>
-
-            <div className="form-group">
-              <label>作業員数</label>
-              <input
-                type="number"
-                className="input"
-                value={workersCount}
-                onChange={(e) => setWorkersCount(Number(e.target.value))}
-              />
-              <span className="unit">人</span>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>進捗状況 *</label>
-            <textarea
-              className="textarea"
-              rows={4}
-              placeholder="本日の作業内容と進捗を記入してください"
-              value={progress}
-              onChange={(e) => setProgress(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>📸 工事写真</label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="input"
-              onChange={handlePhotoUpload}
-            />
-            {photos.length > 0 && (
-              <div className="photos-grid">
-                {photos.map((photo) => (
-                  <div key={photo.id} className="photo-card">
-                    <img src={photo.url} alt="工事写真" className="photo-image" />
+          <div className="entries-list">
+            {entries.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">👷</span>
+                <p>作業員を追加してください</p>
+              </div>
+            ) : (
+              entries.map(entry => (
+                <div key={entry.id} className="entry-card">
+                  <div className="entry-row">
                     <input
                       type="text"
-                      className="photo-description"
-                      placeholder="写真の説明"
-                      value={photo.description}
-                      onChange={(e) => updatePhotoDescription(photo.id, e.target.value)}
+                      placeholder="作業員名"
+                      value={entry.worker}
+                      onChange={e => updateEntry(entry.id, 'worker', e.target.value)}
                     />
-                    <button
-                      className="photo-remove"
-                      onClick={() => removePhoto(photo.id)}
-                    >
-                      ×
-                    </button>
+                    <input
+                      type="text"
+                      placeholder="作業内容"
+                      value={entry.task}
+                      onChange={e => updateEntry(entry.id, 'task', e.target.value)}
+                      className="flex-2"
+                    />
+                    <div className="hours-input">
+                      <input
+                        type="number"
+                        value={entry.hours}
+                        onChange={e => updateEntry(entry.id, 'hours', Number(e.target.value))}
+                      />
+                      <span>時間</span>
+                    </div>
+                    <button className="remove-button" onClick={() => removeEntry(entry.id)}>×</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="form-section">
+          <div className="section-header">
+            <div className="section-line"></div>
+            <h2>進捗状況</h2>
+          </div>
+          <div className="form-card">
+            <textarea
+              placeholder="本日の進捗状況を入力してください..."
+              value={progress}
+              onChange={e => setProgress(e.target.value)}
+              rows={4}
+            />
+          </div>
+        </section>
+
+        <section className="form-section">
+          <div className="section-header">
+            <div className="section-line"></div>
+            <h2>工事写真</h2>
+          </div>
+          <div className="photo-upload">
+            <label className="upload-area">
+              <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} />
+              <span className="upload-icon">📷</span>
+              <span>クリックまたはドラッグで写真を追加</span>
+            </label>
+            {photos.length > 0 && (
+              <div className="photo-grid">
+                {photos.map((photo, i) => (
+                  <div key={i} className="photo-item">
+                    <img src={photo} alt={`写真${i + 1}`} />
                   </div>
                 ))}
               </div>
             )}
           </div>
+        </section>
 
-          <button className="btn btn-primary btn-large" onClick={saveReport}>
-            💾 日報を保存
-          </button>
+        <div className="form-actions">
+          <button className="cancel-button" onClick={() => navigate('/construction')}>キャンセル</button>
+          <button className="submit-button" onClick={handleSubmit}>保存する</button>
         </div>
-
-        {/* 日報一覧 */}
-        {reports.length > 0 && (
-          <div className="reports-list-card">
-            <h2 className="section-title">📋 最近の日報</h2>
-
-            <div className="reports-list">
-              {reports.map((report) => (
-                <div key={report.id} className="report-item">
-                  <div className="report-header-row">
-                    <div className="report-date">
-                      📅 {report.date}
-                    </div>
-                    <div className="report-weather">
-                      {report.weather}
-                    </div>
-                  </div>
-
-                  <h3 className="report-project">{report.projectName}</h3>
-                  <div className="report-work-type">{report.workType}</div>
-
-                  <div className="report-stats">
-                    <div className="stat-item">
-                      <span className="stat-icon">⏰</span>
-                      <span className="stat-value">{report.workHours}時間</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-icon">👷</span>
-                      <span className="stat-value">{report.workersCount}人</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-icon">📸</span>
-                      <span className="stat-value">{report.photos.length}枚</span>
-                    </div>
-                  </div>
-
-                  <div className="report-progress">
-                    {report.progress}
-                  </div>
-
-                  {report.photos.length > 0 && (
-                    <div className="report-photos">
-                      {report.photos.slice(0, 3).map((photo) => (
-                        <img
-                          key={photo.id}
-                          src={photo.url}
-                          alt="工事写真"
-                          className="report-photo-thumb"
-                        />
-                      ))}
-                      {report.photos.length > 3 && (
-                        <div className="photo-count">
-                          +{report.photos.length - 3}枚
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 };

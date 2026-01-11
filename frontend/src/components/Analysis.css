@@ -1,0 +1,347 @@
+/* Analysis - 経営部屋（パープル） */
+@import './Attendance.css';
+
+/* フィルターカード */
+.filter-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.filter-group input {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.filter-group input:focus {
+  outline: none;
+  border-color: var(--theme-color);
+}
+
+/* 分析タブ */
+.analysis-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-button.active {
+  background: var(--theme-gradient);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+/* サマリー */
+.analysis-summary {
+  display: flex;
+  gap: 24px;
+  margin: 24px 0;
+}
+
+.summary-item {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.summary-item .summary-label {
+  display: block;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.summary-item .summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--theme-color);
+}
+
+/* 分析テーブル */
+.analysis-table {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.analysis-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analysis-table th,
+.analysis-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.analysis-table th {
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.analysis-table td {
+  font-size: 14px;
+}
+
+.analysis-table .right {
+  text-align: right;
+}
+
+.analysis-table .profit {
+  color: var(--theme-color);
+  font-weight: 600;
+}
+
+.analysis-table .rate.positive {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.analysis-table .rate.warning {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.analysis-table .variance.positive {
+  color: #34d399;
+}
+
+.analysis-table .positive {
+  color: #34d399;
+}
+
+.analysis-table .negative {
+  color: #f87171;
+}
+
+/* チャートセクション */
+.chart-section {
+  margin-top: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.chart-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 横棒グラフ */
+.horizontal-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.h-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.h-bar-label {
+  width: 150px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.h-bar-container {
+  flex: 1;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.h-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+
+.h-bar-fill.positive {
+  background: linear-gradient(90deg, #34d399, #10b981);
+}
+
+.h-bar-fill.warning {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.h-bar-value {
+  width: 60px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* スタックバー */
+.stacked-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stacked-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stacked-label {
+  width: 80px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stacked-container {
+  flex: 1;
+  height: 20px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stacked-budget {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.stacked-actual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--theme-gradient);
+}
+
+/* 推移チャート */
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 200px;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trend-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 50px;
+}
+
+.trend-bar {
+  width: 36px;
+  background: var(--theme-gradient);
+  border-radius: 4px 4px 0 0;
+  min-height: 20px;
+  transition: height 0.3s;
+}
+
+.trend-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 凡例 */
+.chart-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.legend-item .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-item .dot.budget {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+.legend-item .dot.actual {
+  background: var(--theme-color);
+}
+
+@media (max-width: 1024px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .analysis-tabs {
+    justify-content: center;
+  }
+  .analysis-summary {
+    flex-direction: column;
+  }
+}

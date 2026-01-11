@@ -1,0 +1,207 @@
+.room-container {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  padding: 40px 60px;
+}
+
+/* 営業: オレンジ */
+.room-container.sales {
+  background: linear-gradient(135deg, #1a0a00 0%, #2d1a0a 100%);
+  --room-color: #FF6B00;
+  --room-gradient: linear-gradient(90deg, #FF6B00 0%, #ffaa00 100%);
+}
+
+/* 工事: ブルー */
+.room-container.construction {
+  background: linear-gradient(135deg, #0a1a2d 0%, #0d2540 100%);
+  --room-color: #0066cc;
+  --room-gradient: linear-gradient(90deg, #0066cc 0%, #00aaff 100%);
+}
+
+/* 事務: グリーン */
+.room-container.office {
+  background: linear-gradient(135deg, #0a1a14 0%, #0d2d1a 100%);
+  --room-color: #10b981;
+  --room-gradient: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+/* 経営: パープル */
+.room-container.management {
+  background: linear-gradient(135deg, #1a0a2d 0%, #2d1440 100%);
+  --room-color: #8b5cf6;
+  --room-gradient: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.room-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.room-title-icon {
+  font-size: 48px;
+  margin-right: 16px;
+}
+
+.room-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 60px;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-bottom: 60px;
+}
+
+.room-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 32px;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.room-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--room-gradient);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+
+.room-card:hover::before {
+  transform: scaleX(1);
+}
+
+.room-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.room-card-icon {
+  font-size: 40px;
+  margin-bottom: 20px;
+}
+
+.room-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.room-card-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.room-card-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--room-gradient);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.room-card-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.room-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 800;
+  background: var(--room-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 1024px) {
+  .room-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .room-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .room-container {
+    padding: 20px;
+  }
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+  .room-stats {
+    grid-template-columns: 1fr;
+  }
+  .room-title {
+    font-size: 32px;
+  }
+}
