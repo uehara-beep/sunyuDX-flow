@@ -1,8 +1,38 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-python-multipart==0.0.20
-pydantic>=2.7.0
-pydantic-settings==2.7.1
-openpyxl==3.1.5
-pandas==2.2.3
-python-dotenv==1.0.1
+# sunyuDX-flow Backend Requirements
+# S-BASE方式の完全実装
+
+# FastAPI
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# データベース
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.13.0
+
+# Excel処理
+openpyxl==3.1.2
+pandas==2.1.4
+xlrd==2.0.1
+
+# PDF生成
+reportlab==4.0.7
+PyPDF2==3.0.1
+
+# 画像処理・OCR
+Pillow==10.1.0
+pytesseract==0.3.10
+
+# セキュリティ・認証
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+
+# API連携
+httpx==0.25.2
+aiohttp==3.9.1
+
+# ユーティリティ
+pydantic==2.5.2
+python-dateutil==2.8.2

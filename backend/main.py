@@ -3,7 +3,7 @@ sunyuDX-flow Backend API
 S-BASE方式の完全実装版
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -15,8 +15,6 @@ import uuid
 import os
 from pathlib import Path
 import json
-from linebot.exceptions import InvalidSignatureError
-from line_bot import handler, line_bot_api
 
 # FastAPIアプリケーション
 app = FastAPI(
@@ -111,26 +109,52 @@ def analyze_excel_file(file_path: Path) -> List[EstimateBreakdown]:
     Excelファイルを解析して内訳明細を抽出
     S-BASE方式: 全シートをスキャンして自動抽出
     """
-    from sbase_excel_reader import extract_from_excel
+    breakdowns = []
     
     try:
-        # S-BASE方式でExcelを解析
-        result = extract_from_excel(str(file_path))
+        # openpyxlでExcelを開く
+        wb = openpyxl.load_workbook(file_path, data_only=True)
         
-        breakdowns = []
-        for item in result.get('items', []):
-            breakdown = EstimateBreakdown(
-                id=item['id'],
-                sheet_name=item['sheet_name'],
-                item_name=item['item_name'],
-                amount=item['amount']
-            )
-            breakdowns.append(breakdown)
+        # 全シートをスキャン
+        for sheet_name in wb.sheetnames:
+            sheet = wb[sheet_name]
+            
+            # キーワード検索: 「金額」「合計」「小計」を含む行を探す
+            for row_idx, row in enumerate(sheet.iter_rows(min_row=1, max_row=100), start=1):
+                for cell in row:
+                    if cell.value and isinstance(cell.value, str):
+                        # 「○○工」や「○○費」などを検索
+                        if any(keyword in cell.value for keyword in ['工', '費', '作業']):
+                            # 同じ行の金額を探す
+                            amount = None
+                            for amt_cell in row:
+                                if isinstance(amt_cell.value, (int, float)) and amt_cell.value > 1000:
+                                    amount = float(amt_cell.value)
+                                    break
+                            
+                            if amount:
+                                breakdown = EstimateBreakdown(
+                                    id=str(uuid.uuid4()),
+                                    sheet_name=sheet_name,
+                                    item_name=str(cell.value),
+                                    amount=amount
+                                )
+                                breakdowns.append(breakdown)
+                                break  # 同じ行で複数ヒットしないように
         
-        return breakdowns
+        # 重複を除去
+        seen = set()
+        unique_breakdowns = []
+        for b in breakdowns:
+            key = (b.sheet_name, b.item_name, b.amount)
+            if key not in seen:
+                seen.add(key)
+                unique_breakdowns.append(b)
+        
+        return unique_breakdowns[:10]  # 最大10件
         
     except Exception as e:
-        print(f"S-BASE Excel解析エラー: {e}")
+        print(f"Excel解析エラー: {e}")
         return []
 
 def classify_cost_item(item_name: str, amount: float) -> str:
@@ -164,63 +188,29 @@ def generate_estimate_pdf(budget: Budget) -> Path:
     from reportlab.lib.units import mm
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
     
-    # 日本語フォント設定
+    # 日本語フォント設定（システムにある場合）
     try:
-        # IPAフォント（Linuxで一般的）
-        pdfmetrics.registerFont(TTFont('Japanese', '/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf'))
-        font_name = 'Japanese'
+        pdfmetrics.registerFont(TTFont('Japanese', '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf'))
     except:
-        try:
-            # ヒラギノ（macOS）
-            pdfmetrics.registerFont(TTFont('Japanese', '/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc'))
-            font_name = 'Japanese'
-        except:
-            try:
-                # UnicodeCIDFont（フォールバック）
-                pdfmetrics.registerFont(UnicodeCIDFont('HeiseiMin-W3'))
-                font_name = 'HeiseiMin-W3'
-            except:
-                # 最終フォールバック
-                font_name = 'Helvetica'
+        pass  # フォントがない場合はデフォルト
     
     # PDF出力パス
     pdf_path = OUTPUT_DIR / f"estimate_{budget.id}.pdf"
     
     # PDFドキュメント作成
-    doc = SimpleDocTemplate(
-        str(pdf_path), 
-        pagesize=A4,
-        topMargin=20*mm,
-        bottomMargin=20*mm,
-        leftMargin=20*mm,
-        rightMargin=20*mm
-    )
+    doc = SimpleDocTemplate(str(pdf_path), pagesize=A4)
     story = []
     styles = getSampleStyleSheet()
     
-    # カスタムスタイル
+    # タイトル
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=24,
         textColor=colors.HexColor('#0066cc'),
         spaceAfter=20,
-        fontName=font_name,
-        alignment=1,  # 中央揃え
     )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.HexColor('#0066cc'),
-        spaceAfter=10,
-        fontName=font_name,
-    )
-    
-    # タイトル
     story.append(Paragraph('見積書', title_style))
     story.append(Spacer(1, 10*mm))
     
@@ -230,15 +220,14 @@ def generate_estimate_pdf(budget: Budget) -> Path:
         ['発注者', budget.client_name],
         ['作成日', budget.created_at.strftime('%Y年%m月%d日')],
     ]
-    info_table = Table(info_data, colWidths=[50*mm, 120*mm])
+    info_table = Table(info_data, colWidths=[50*mm, 100*mm])
     info_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f0f0f0')),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), font_name),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('TOPPADDING', (0, 0), (-1, -1), 12),
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),
     ]))
     story.append(info_table)
@@ -250,24 +239,23 @@ def generate_estimate_pdf(budget: Budget) -> Path:
         [f'粗利率 {budget.profit_rate}%', f'¥{budget.profit_amount:,.0f}'],
         ['見積金額', f'¥{budget.estimate_amount:,.0f}'],
     ]
-    summary_table = Table(summary_data, colWidths=[80*mm, 90*mm])
+    summary_table = Table(summary_data, colWidths=[80*mm, 70*mm])
     summary_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f0f0f0')),
         ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#0066cc')),
         ('TEXTCOLOR', (0, 2), (-1, 2), colors.white),
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, -1), font_name),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 1), 14),
         ('FONTSIZE', (0, 2), (-1, 2), 18),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('TOPPADDING', (0, 0), (-1, -1), 12),
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),
     ]))
     story.append(summary_table)
-    story.append(Spacer(1, 15*mm))
+    story.append(Spacer(1, 10*mm))
     
     # 5科目内訳
-    story.append(Paragraph('内訳明細', heading_style))
+    story.append(Paragraph('内訳明細', styles['Heading2']))
     story.append(Spacer(1, 5*mm))
     
     for category_name, category in [
@@ -278,59 +266,32 @@ def generate_estimate_pdf(budget: Budget) -> Path:
         ('経費', budget.expense),
     ]:
         if category.total > 0:
-            # カテゴリータイトル
-            cat_para = Paragraph(
-                f'{category_name}: ¥{category.total:,.0f}',
-                ParagraphStyle(
-                    'CategoryTitle',
-                    parent=styles['Heading3'],
-                    fontSize=12,
-                    textColor=colors.HexColor('#FF6B00'),
-                    fontName=font_name,
-                )
-            )
-            story.append(cat_para)
-            story.append(Spacer(1, 3*mm))
+            story.append(Paragraph(f'{category_name}: ¥{category.total:,.0f}', styles['Heading3']))
             
             if category.items:
                 item_data = [['項目', '数量', '単位', '単価', '金額']]
-                for item in category.items[:10]:  # 最大10件
+                for item in category.items[:5]:  # 最大5件
                     item_data.append([
-                        item.name[:20],  # 20文字まで
+                        item.name,
                         f'{item.quantity:.1f}',
                         item.unit,
                         f'¥{item.unit_price:,.0f}',
                         f'¥{item.amount:,.0f}',
                     ])
                 
-                item_table = Table(item_data, colWidths=[50*mm, 20*mm, 20*mm, 35*mm, 40*mm])
+                item_table = Table(item_data, colWidths=[60*mm, 20*mm, 20*mm, 30*mm, 30*mm])
                 item_table.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                     ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, -1), font_name),
-                    ('FONTSIZE', (0, 0), (-1, -1), 9),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                    ('TOPPADDING', (0, 0), (-1, -1), 6),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
                     ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                 ]))
                 story.append(item_table)
             
             story.append(Spacer(1, 5*mm))
-    
-    # フッター
-    story.append(Spacer(1, 10*mm))
-    footer_style = ParagraphStyle(
-        'Footer',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.grey,
-        fontName=font_name,
-        alignment=1,
-    )
-    story.append(Paragraph('株式会社サンユウテック', footer_style))
-    story.append(Paragraph('sunyuDX-flow で生成', footer_style))
     
     # PDF生成
     doc.build(story)
@@ -354,7 +315,6 @@ async def root():
 async def upload_estimate(file: UploadFile = File(...)):
     """
     見積書Excelをアップロードして解析
-    S-BASE方式: キーワード検索で柔軟に対応
     """
     try:
         # ファイル保存
@@ -363,31 +323,14 @@ async def upload_estimate(file: UploadFile = File(...)):
             content = await file.read()
             f.write(content)
         
-        # S-BASE方式でExcel解析
-        from sbase_excel_reader import extract_from_excel
-        result = extract_from_excel(str(file_path))
+        # Excel解析
+        breakdowns = analyze_excel_file(file_path)
         
-        # 内訳明細をEstimateBreakdownに変換
-        breakdowns = []
-        for item in result.get('items', []):
-            breakdown = EstimateBreakdown(
-                id=item['id'],
-                sheet_name=item['sheet_name'],
-                item_name=item['item_name'],
-                amount=item['amount']
-            )
-            breakdowns.append(breakdown)
-        
-        # 一時ファイルは残しておく（後で使うかも）
-        # file_path.unlink()
+        # 一時ファイル削除
+        file_path.unlink()
         
         return {
             "status": "success",
-            "project_name": result['project_name'],
-            "client_name": result['client_name'],
-            "location": result['location'],
-            "amount": result['amount'],
-            "sheets": result['sheets'],
             "breakdowns": [b.dict() for b in breakdowns]
         }
     
@@ -443,136 +386,6 @@ async def generate_pdf(budget_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF生成エラー: {str(e)}")
 
-@app.post("/api/budget/{budget_id}/excel")
-async def generate_excel(budget_id: str):
-    """
-    実行予算書Excelを生成
-    """
-    if budget_id not in budgets_db:
-        raise HTTPException(status_code=404, detail="予算が見つかりません")
-    
-    try:
-        budget = budgets_db[budget_id]
-        
-        # Budgetオブジェクトを辞書に変換
-        budget_dict = {
-            'id': budget.id,
-            'project_name': budget.project_name,
-            'client_name': budget.client_name,
-            'material': {'items': [item.dict() for item in budget.material.items], 'total': budget.material.total},
-            'labor': {'items': [item.dict() for item in budget.labor.items], 'total': budget.labor.total},
-            'equipment': {'items': [item.dict() for item in budget.equipment.items], 'total': budget.equipment.total},
-            'subcontract': {'items': [item.dict() for item in budget.subcontract.items], 'total': budget.subcontract.total},
-            'expense': {'items': [item.dict() for item in budget.expense.items], 'total': budget.expense.total},
-            'budget_total': budget.budget_total,
-            'profit_rate': budget.profit_rate,
-            'profit_amount': budget.profit_amount,
-            'estimate_amount': budget.estimate_amount,
-        }
-        
-        from excel_generator import generate_budget_excel
-        excel_path = OUTPUT_DIR / f"budget_{budget_id}.xlsx"
-        generate_budget_excel(budget_dict, str(excel_path))
-        
-        return FileResponse(
-            path=str(excel_path),
-            filename=f"budget_{budget_id}.xlsx",
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Excel生成エラー: {str(e)}")
-
-@app.get("/api/projects/excel")
-async def export_projects_excel():
-    """
-    工事台帳一覧をExcel出力
-    """
-    try:
-        # デモデータ
-        demo_projects = [
-            {
-                "id": "1",
-                "name": "広島自動車道工事",
-                "client": "NEXCO西日本",
-                "contract_amount": 15000000,
-                "budget_amount": 12500000,
-                "actual_cost": 10625000,
-                "profit_rate": 0.185,
-                "progress": 0.85,
-                "status": "active",
-            },
-            {
-                "id": "2",
-                "name": "○○市水道管工事",
-                "client": "○○市水道局",
-                "contract_amount": 8500000,
-                "budget_amount": 7200000,
-                "actual_cost": 7800000,
-                "profit_rate": 0.047,
-                "progress": 0.92,
-                "status": "danger",
-            },
-        ]
-        
-        from excel_generator import generate_project_list_excel
-        excel_path = OUTPUT_DIR / f"projects_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        generate_project_list_excel(demo_projects, str(excel_path))
-        
-        return FileResponse(
-            path=str(excel_path),
-            filename=excel_path.name,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Excel生成エラー: {str(e)}")
-
-# =====================================
-# Claude AI Integration
-# =====================================
-
-@app.post("/api/ai/classify")
-async def ai_classify_item(item_name: str, amount: float):
-    """
-    AIで原価項目を5科目に自動分類
-    """
-    try:
-        from claude_ai import classify_cost_item_ai
-        result = classify_cost_item_ai(item_name, amount)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI分類エラー: {str(e)}")
-
-@app.post("/api/ai/suggest")
-async def ai_suggest_budget(budget_data: Dict[str, Any]):
-    """
-    AIで実行予算の改善提案を生成
-    """
-    try:
-        from claude_ai import suggest_budget_improvements_ai
-        # 過去データ（デモ用）
-        historical_data = [
-            {'material_ratio': 0.35, 'labor_ratio': 0.25},
-            {'material_ratio': 0.38, 'labor_ratio': 0.22},
-        ]
-        suggestions = suggest_budget_improvements_ai(budget_data, historical_data)
-        return {"suggestions": suggestions}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI提案エラー: {str(e)}")
-
-@app.post("/api/ai/analyze-risk")
-async def ai_analyze_risk(project_data: Dict[str, Any]):
-    """
-    AIでプロジェクトのリスク分析
-    """
-    try:
-        from claude_ai import analyze_project_risk_ai
-        result = analyze_project_risk_ai(project_data)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AIリスク分析エラー: {str(e)}")
-
 @app.get("/api/projects")
 async def get_projects():
     """
@@ -622,42 +435,6 @@ async def get_dashboard_stats():
         "revenue": 125000000,
         "alerts": 2
     }
-
-# =====================================
-# LINE Bot Webhook
-# =====================================
-
-@app.post("/webhook/line")
-async def line_webhook(request: Request):
-    """
-    LINE Messaging API Webhook
-    """
-    # X-Line-Signatureヘッダーを取得
-    signature = request.headers.get('X-Line-Signature', '')
-    
-    # リクエストボディを取得
-    body = await request.body()
-    body_str = body.decode('utf-8')
-    
-    # 署名検証してイベントを処理
-    try:
-        handler.handle(body_str, signature)
-    except InvalidSignatureError:
-        raise HTTPException(status_code=400, detail="Invalid signature")
-    
-    return {"status": "ok"}
-
-@app.post("/api/line/push")
-async def send_line_push(user_id: str, message: str):
-    """
-    LINEプッシュメッセージを送信
-    """
-    try:
-        from linebot.models import TextSendMessage
-        line_bot_api.push_message(user_id, TextSendMessage(text=message))
-        return {"status": "success"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"送信エラー: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
