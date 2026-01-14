@@ -20,6 +20,7 @@ interface LineItemTableProps {
   editable?: boolean;
   onChange?: (items: LineItem[]) => void;
   onDelete?: (id: string) => void;
+  onReorder?: (items: LineItem[]) => void;
 }
 
 const CATEGORY_OPTIONS = [
@@ -52,9 +53,60 @@ const LineItemTable: React.FC<LineItemTableProps> = ({
   kind,
   editable = false,
   onChange,
-  onDelete
+  onDelete,
+  onReorder
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  // ドラッグ&ドロップ処理
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    // ドラッグ中の行を半透明に
+    const target = e.target as HTMLElement;
+    setTimeout(() => target.classList.add('dragging'), 0);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedId(null);
+    setDragOverId(null);
+    const target = e.target as HTMLElement;
+    target.classList.remove('dragging');
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id !== draggedId) {
+      setDragOverId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId || !onReorder) return;
+
+    const draggedIndex = items.findIndex(item => item.id === draggedId);
+    const targetIndex = items.findIndex(item => item.id === targetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    // 新しい配列を作成して並び替え
+    const newItems = [...items];
+    const [draggedItem] = newItems.splice(draggedIndex, 1);
+    newItems.splice(targetIndex, 0, draggedItem);
+
+    onReorder(newItems);
+    setDraggedId(null);
+    setDragOverId(null);
+  };
 
   const handleChange = (id: string, field: keyof LineItem, value: string) => {
     if (!onChange) return;
@@ -85,6 +137,7 @@ const LineItemTable: React.FC<LineItemTableProps> = ({
       <table className="line-item-table">
         <thead>
           <tr>
+            {onReorder && <th className="col-drag"></th>}
             <th className="col-name">名称</th>
             <th className="col-breakdown">内訳</th>
             <th className="col-qty">数量</th>
@@ -99,7 +152,7 @@ const LineItemTable: React.FC<LineItemTableProps> = ({
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td colSpan={kind === 'actual' ? 9 : 8} className="empty-message">
+              <td colSpan={(kind === 'actual' ? 9 : 8) + (onReorder ? 1 : 0)} className="empty-message">
                 データがありません
               </td>
             </tr>
@@ -107,9 +160,33 @@ const LineItemTable: React.FC<LineItemTableProps> = ({
             items.map(item => {
               const catInfo = getCategoryInfo(item.category || 'expense');
               const isEditing = editable && editingId === item.id;
+              const isDragOver = dragOverId === item.id;
 
               return (
-                <tr key={item.id} className={isEditing ? 'editing' : ''}>
+                <tr
+                  key={item.id}
+                  className={`${isEditing ? 'editing' : ''} ${isDragOver ? 'drag-over' : ''}`}
+                  draggable={!!onReorder}
+                  onDragStart={(e) => handleDragStart(e, item.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, item.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, item.id)}
+                >
+                  {onReorder && (
+                    <td className="col-drag">
+                      <span className="drag-handle" title="ドラッグして並び替え">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                          <circle cx="9" cy="6" r="1.5" />
+                          <circle cx="15" cy="6" r="1.5" />
+                          <circle cx="9" cy="12" r="1.5" />
+                          <circle cx="15" cy="12" r="1.5" />
+                          <circle cx="9" cy="18" r="1.5" />
+                          <circle cx="15" cy="18" r="1.5" />
+                        </svg>
+                      </span>
+                    </td>
+                  )}
                   <td className="col-name">
                     {isEditing ? (
                       <input
@@ -258,7 +335,7 @@ const LineItemTable: React.FC<LineItemTableProps> = ({
         </tbody>
         <tfoot>
           <tr className="total-row">
-            <td colSpan={5} className="total-label">合計</td>
+            <td colSpan={5 + (onReorder ? 1 : 0)} className="total-label">合計</td>
             <td className="total-amount text-right">
               ¥{totalAmount.toLocaleString()}
             </td>

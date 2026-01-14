@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { jget, jpost } from '../api';
+import { jget, jpost, jpatch } from '../api';
 import LineItemTable, { LineItem } from './LineItemTable';
 import './ProjectList.css';
 
@@ -27,6 +27,7 @@ interface EstimateLine {
   note: string;
   category: string | null;
   month: string | null;
+  sort_order: number;
   created_at: string | null;
 }
 
@@ -373,6 +374,27 @@ const ProjectDetail: React.FC = () => {
       setAttachments(data.attachments);
     } catch (err) {
       console.error('添付ファイル取得エラー:', err);
+    }
+  };
+
+  // 明細行の並び替え
+  const handleReorderLines = async (reorderedItems: LineItem[]) => {
+    // 楽観的更新: 先にUIを更新
+    setEstimateLines(reorderedItems.map((item, index) => {
+      const original = estimateLines.find(l => l.id === item.id);
+      return original ? { ...original, sort_order: index } : original!;
+    }).filter(Boolean));
+
+    try {
+      await jpatch(`/api/projects/${projectId}/estimate-lines/reorder`, {
+        line_ids: reorderedItems.map(item => item.id),
+        sort_orders: reorderedItems.map((_, index) => index)
+      });
+    } catch (err) {
+      console.error('並び替えエラー:', err);
+      showToast('並び替えに失敗しました', 'error');
+      // エラー時は元に戻す
+      fetchEstimateLines();
     }
   };
 
@@ -1031,6 +1053,7 @@ const ProjectDetail: React.FC = () => {
               }))}
               kind={estimateKind === 'actual' ? 'actual' : estimateKind === 'budget' ? 'budget' : 'estimate'}
               editable={false}
+              onReorder={handleReorderLines}
             />
           )}
 
