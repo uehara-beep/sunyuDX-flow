@@ -12,7 +12,10 @@ import ManagementRoom from './components/ManagementRoom';
 // 営業系ページ
 import EstimateUpload from './components/EstimateUpload';
 import ProjectList from './components/ProjectList';
+import ProjectDetail from './components/ProjectDetail';
 import BudgetCreate from './components/BudgetCreate';
+import BudgetCreation from './components/BudgetCreation';
+import BudgetList from './components/BudgetList';
 
 // 工事系ページ
 import DailyReport from './components/DailyReport';
@@ -29,6 +32,9 @@ import Dashboard from './components/Dashboard';
 import Analysis from './components/Analysis';
 import AISecretary from './components/AISecretary';
 
+// 未実装ページ用
+import ComingSoon from './components/ComingSoon';
+
 function App() {
   return (
     <BrowserRouter>
@@ -40,7 +46,10 @@ function App() {
         <Route path="/sales" element={<SalesRoom />} />
         <Route path="/estimate/upload" element={<EstimateUpload />} />
         <Route path="/budget/create" element={<BudgetCreate />} />
+        <Route path="/budget/create-detailed" element={<BudgetCreation />} />
+        <Route path="/budget/list" element={<BudgetList />} />
         <Route path="/projects" element={<ProjectList />} />
+        <Route path="/projects/:projectId" element={<ProjectDetail />} />
 
         {/* 工事部屋 */}
         <Route path="/construction" element={<ConstructionRoom />} />
@@ -60,6 +69,9 @@ function App() {
         <Route path="/management/analysis" element={<Analysis />} />
         <Route path="/management/ai-secretary" element={<AISecretary />} />
         <Route path="/management/ai" element={<AISecretary />} />
+
+        {/* 404 - その他のパス */}
+        <Route path="*" element={<ComingSoon />} />
       </Routes>
     </BrowserRouter>
   );

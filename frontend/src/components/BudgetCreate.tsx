@@ -6,7 +6,7 @@ interface BudgetItem {
   id: number;
   category: string;
   name: string;
-  amount: number;
+  amount: string;  // string for input handling
 }
 
 const BudgetCreate: React.FC = () => {
@@ -22,7 +22,7 @@ const BudgetCreate: React.FC = () => {
       id: Date.now(),
       category: '労務費',
       name: '',
-      amount: 0,
+      amount: '',
     };
     setItems([...items, newItem]);
   };
@@ -39,10 +39,10 @@ const BudgetCreate: React.FC = () => {
 
   const getCategoryTotal = (category: string) => {
     return items.filter(item => item.category === category)
-      .reduce((sum, item) => sum + item.amount, 0);
+      .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  const totalAmount = items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
   return (
     <div className="page-container">
@@ -143,11 +143,12 @@ const BudgetCreate: React.FC = () => {
                     </div>
                     <div className="col-amount">
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         className="form-input amount-input"
                         placeholder="0"
-                        value={item.amount || ''}
-                        onChange={(e) => updateItem(item.id, 'amount', parseInt(e.target.value) || 0)}
+                        value={item.amount}
+                        onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
                       />
                     </div>
                     <div className="col-action">

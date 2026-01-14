@@ -17,9 +17,6 @@ const OfficeRoom: React.FC = () => {
     { name: '勤怠管理', path: '/office/attendance' },
     { name: '経費精算', path: '/office/expense' },
     { name: '請求書管理', path: '/office/invoice' },
-    { name: '給与計算', path: '/office/payroll' },
-    { name: '社員管理', path: '/office/employees' },
-    { name: '書類管理', path: '/office/documents' },
   ];
 
   const pendingItems = [

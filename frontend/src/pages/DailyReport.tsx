@@ -23,7 +23,7 @@ const DailyReport = () => {
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   const [weather, setWeather] = useState('晴れ');
   const [workContent, setWorkContent] = useState('');
-  const [workerCount, setWorkerCount] = useState(0);
+  const [workerCount, setWorkerCount] = useState('');
   const [issues, setIssues] = useState('');
   const [tomorrowPlan, setTomorrowPlan] = useState('');
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -186,9 +186,10 @@ const DailyReport = () => {
                 作業員数
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={workerCount}
-                onChange={(e) => setWorkerCount(parseInt(e.target.value) || 0)}
+                onChange={(e) => setWorkerCount(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
               />
             </div>

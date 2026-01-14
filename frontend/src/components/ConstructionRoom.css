@@ -298,6 +298,90 @@
 .status-good { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 .status-delayed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
+/* 12月入力導線 */
+.december-guide {
+  margin-bottom: 24px;
+}
+
+.guide-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+}
+
+.guide-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(5, 150, 105, 0.4);
+}
+
+.guide-badge-small {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.guide-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guide-text strong {
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.guide-text span {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+}
+
+.guide-arrow-small {
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.guide-card:hover .guide-arrow-small {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+/* 準備中アイテム */
+.menu-item-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.menu-item-disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.disabled-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .room-container { padding: 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }

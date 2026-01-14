@@ -19,14 +19,15 @@ const Expense: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState('交通費');
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState('');
   const [expenses, setExpenses] = useState<ExpenseItem[]>([
     { id: 1, date: '2026-01-10', category: '交通費', description: '現場往復タクシー代', amount: 3200, receipt: true, status: 'approved' },
     { id: 2, date: '2026-01-09', category: '会議費', description: '打ち合わせ昼食代', amount: 1500, receipt: true, status: 'pending' },
   ]);
 
   const addExpense = () => {
-    if (!description || !amount) {
+    const amountNum = parseFloat(amount) || 0;
+    if (!description || !amountNum) {
       alert('内容と金額を入力してください');
       return;
     }
@@ -35,13 +36,13 @@ const Expense: React.FC = () => {
       date,
       category,
       description,
-      amount,
+      amount: amountNum,
       receipt: false,
       status: 'pending',
     };
     setExpenses([newExpense, ...expenses]);
     setDescription('');
-    setAmount(0);
+    setAmount('');
     alert('経費を申請しました');
   };
 
@@ -101,10 +102,11 @@ const Expense: React.FC = () => {
               <div className="form-group">
                 <label>金額</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="3000"
-                  value={amount || ''}
-                  onChange={e => setAmount(Number(e.target.value))}
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
                 />
               </div>
             </div>

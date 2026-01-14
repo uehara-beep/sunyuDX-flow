@@ -227,8 +227,8 @@
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
 
-                // 予算一覧ページへ遷移
-                window.location.href = 'budget-list.html';
+                // 営業ルームへ遷移
+                window.location.href = 'sales-room.html';
 
             } catch (error) {
                 errorEl.textContent = error.message;
@@ -240,7 +240,7 @@
 
         // 既にログイン済みならリダイレクト
         if (localStorage.getItem('token')) {
-            window.location.href = 'budget-list.html';
+            window.location.href = 'sales-room.html';
         }
     </script>
 </body>

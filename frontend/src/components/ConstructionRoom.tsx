@@ -17,9 +17,6 @@ const ConstructionRoom: React.FC = () => {
     { name: '工事台帳', path: '/construction/ledger' },
     { name: '日報入力', path: '/daily/report' },
     { name: '原価入力', path: '/cost/input' },
-    { name: '安全管理', path: '/construction/safety' },
-    { name: '品質管理', path: '/construction/quality' },
-    { name: '進捗報告', path: '/construction/progress' },
   ];
 
   const recentItems = [
@@ -54,6 +51,18 @@ const ConstructionRoom: React.FC = () => {
         ))}
       </section>
 
+      {/* 12月入力導線 */}
+      <section className="december-guide">
+        <div className="guide-card" onClick={() => navigate('/construction/ledger')}>
+          <div className="guide-badge-small">運用中</div>
+          <div className="guide-text">
+            <strong>12月 売上・原価入力</strong>
+            <span>工事台帳 → 工事選択 → 詳細で入力</span>
+          </div>
+          <span className="guide-arrow-small">→</span>
+        </div>
+      </section>
+
       <section className="section">
         <h2 className="section-title">
           <span className="title-line"></span>
@@ -72,7 +81,7 @@ const ConstructionRoom: React.FC = () => {
             </button>
           ))}
         </div>
-        
+
         {hiddenCount > 0 && (
           <button className="expand-button" onClick={() => setExpanded(!expanded)}>
             <span className="pulse-line"></span>

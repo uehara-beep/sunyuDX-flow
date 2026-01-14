@@ -33,13 +33,14 @@ const BudgetCreation: React.FC = () => {
     contract_amount: 0,
     items: [],
   });
-  const [newItem, setNewItem] = useState<Partial<BudgetItem>>({
+  // 数値入力はstringで管理（0先頭バグ防止）
+  const [newItem, setNewItem] = useState({
     category: '材料費',
     item_name: '',
     specification: '',
-    quantity: 1,
+    quantity: '1',  // string
     unit: '式',
-    unit_price: 0,
+    unit_price: '',  // string (初期は空)
     vendor_name: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -51,15 +52,19 @@ const BudgetCreation: React.FC = () => {
       return;
     }
 
+    // string → number 変換 (保存時のみ)
+    const qty = parseFloat(newItem.quantity) || 1;
+    const price = parseFloat(newItem.unit_price) || 0;
+
     const item: BudgetItem = {
       id: Date.now().toString(),
       category: newItem.category || '材料費',
       item_name: newItem.item_name || '',
       specification: newItem.specification || '',
-      quantity: newItem.quantity || 1,
+      quantity: qty,
       unit: newItem.unit || '式',
-      unit_price: newItem.unit_price || 0,
-      amount: (newItem.quantity || 1) * (newItem.unit_price || 0),
+      unit_price: price,
+      amount: qty * price,
       vendor_name: newItem.vendor_name || '',
     };
 
@@ -72,9 +77,9 @@ const BudgetCreation: React.FC = () => {
       category: newItem.category,
       item_name: '',
       specification: '',
-      quantity: 1,
+      quantity: '1',
       unit: '式',
-      unit_price: 0,
+      unit_price: '',
       vendor_name: '',
     });
     setMessage('');
@@ -209,9 +214,10 @@ const BudgetCreation: React.FC = () => {
             <div className="form-group">
               <label>請負金額</label>
               <input
-                type="number"
-                value={budgetData.contract_amount}
-                onChange={(e) => setBudgetData({ ...budgetData, contract_amount: Number(e.target.value) })}
+                type="text"
+                inputMode="numeric"
+                value={budgetData.contract_amount || ''}
+                onChange={(e) => setBudgetData({ ...budgetData, contract_amount: parseFloat(e.target.value) || 0 })}
                 placeholder="0"
               />
             </div>
@@ -243,10 +249,11 @@ const BudgetCreation: React.FC = () => {
               onChange={(e) => setNewItem({ ...newItem, specification: e.target.value })}
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="数量"
               value={newItem.quantity}
-              onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
+              onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
               style={{ width: '80px' }}
             />
             <input
@@ -257,10 +264,11 @@ const BudgetCreation: React.FC = () => {
               style={{ width: '60px' }}
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="単価"
               value={newItem.unit_price}
-              onChange={(e) => setNewItem({ ...newItem, unit_price: Number(e.target.value) })}
+              onChange={(e) => setNewItem({ ...newItem, unit_price: e.target.value })}
               style={{ width: '100px' }}
             />
             <input

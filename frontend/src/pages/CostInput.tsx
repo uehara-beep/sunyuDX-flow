@@ -11,7 +11,7 @@ const API_URL = 'http://localhost:8000';
 interface CostItem {
   id: string;
   itemName: string;
-  amount: number;
+  amount: string;  // string for input handling
   category: string;
   confidence: number;
   isClassified: boolean;
@@ -30,7 +30,7 @@ const CostInput = () => {
     const newItem: CostItem = {
       id: crypto.randomUUID(),
       itemName: '',
-      amount: 0,
+      amount: '',
       category: '',
       confidence: 0,
       isClassified: false
@@ -62,7 +62,7 @@ const CostInput = () => {
     try {
       const res = await axios.post(`${API_URL}/api/ai/classify`, {
         item_name: item.itemName,
-        amount: item.amount
+        amount: parseFloat(item.amount) || 0
       });
 
       updateItem(id, 'category', res.data.category);
@@ -118,9 +118,14 @@ const CostInput = () => {
 
     setIsSaving(true);
     try {
+      // string amounts を number に変換して送信
+      const itemsWithNumbers = items.map(item => ({
+        ...item,
+        amount: parseFloat(item.amount) || 0
+      }));
       await axios.post(`${API_URL}/api/cost/save`, {
         project_id: projectId,
-        items: items
+        items: itemsWithNumbers
       });
       alert('保存しました');
     } catch (err) {
@@ -133,7 +138,7 @@ const CostInput = () => {
 
   const totalByCategory = categories.map(cat => ({
     category: cat,
-    total: items.filter(i => i.category === cat).reduce((sum, i) => sum + i.amount, 0)
+    total: items.filter(i => i.category === cat).reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0)
   }));
 
   const getConfidenceColor = (confidence: number) => {
@@ -231,9 +236,10 @@ const CostInput = () => {
                         金額
                       </label>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={item.amount}
-                        onChange={(e) => updateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
@@ -318,7 +324,7 @@ const CostInput = () => {
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
               <span className="text-lg font-bold">合計</span>
               <span className="text-2xl font-bold text-green-600">
-                ¥{items.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                ¥{items.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0).toLocaleString()}
               </span>
             </div>
           </div>

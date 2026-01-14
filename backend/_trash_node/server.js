@@ -31,11 +31,13 @@ const pool = new Pool({
 const JWT_SECRET = process.env.JWT_SECRET || 'sunyudx-secret-key-2024';
 const JWT_EXPIRES = '24h';
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5500'],
-  credentials: true
-}));
+// CORS設定（開発環境：すべてのオリジンを許可）
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

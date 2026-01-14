@@ -17,9 +17,6 @@ const ManagementRoom: React.FC = () => {
     { name: 'ダッシュボード', path: '/management/dashboard' },
     { name: '利益率分析', path: '/management/analysis' },
     { name: 'AI秘書', path: '/management/ai' },
-    { name: '売上予測', path: '/management/forecast' },
-    { name: '経費分析', path: '/management/expense' },
-    { name: 'レポート出力', path: '/management/report' },
   ];
 
   const alerts = [

@@ -19,7 +19,7 @@ const CostInput: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState('労務費');
   const [item, setItem] = useState('');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState('');
   const [vendor, setVendor] = useState('');
   const [entries, setEntries] = useState<CostEntry[]>([]);
 
@@ -47,7 +47,8 @@ const CostInput: React.FC = () => {
   };
 
   const addEntry = () => {
-    if (!project || !item || !amount) {
+    const amountNum = parseFloat(amount) || 0;
+    if (!project || !item || !amountNum) {
       alert('必須項目を入力してください');
       return;
     }
@@ -56,12 +57,12 @@ const CostInput: React.FC = () => {
       date,
       category,
       item,
-      amount,
+      amount: amountNum,
       vendor,
     };
     setEntries([newEntry, ...entries]);
     setItem('');
-    setAmount(0);
+    setAmount('');
     setVendor('');
     alert('原価を記録しました');
   };
@@ -119,10 +120,11 @@ const CostInput: React.FC = () => {
                   <div className="form-group">
                     <label>金額 *</label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="50000"
-                      value={amount || ''}
-                      onChange={e => setAmount(Number(e.target.value))}
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
                     />
                   </div>
                 </div>

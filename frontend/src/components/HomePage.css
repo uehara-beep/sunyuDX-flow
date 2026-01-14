@@ -361,3 +361,92 @@
     margin-left: 0;
   }
 }
+
+/* ========================================
+   12月入力導線カード
+   ======================================== */
+.december-guide-section {
+  max-width: 1000px;
+  margin: 0 auto 32px;
+}
+
+.december-guide-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border-radius: 16px;
+  padding: 20px 28px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(5, 150, 105, 0.3);
+}
+
+.december-guide-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(5, 150, 105, 0.4);
+}
+
+.guide-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.guide-content {
+  flex: 1;
+}
+
+.guide-content h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.guide-path {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  margin: 0;
+}
+
+.guide-arrow {
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.december-guide-card:hover .guide-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+/* ========================================
+   準備中アイテム（disabled）
+   ======================================== */
+.card-item-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card-item-disabled:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.05);
+  transform: none;
+}
+
+.item-badge-disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}

@@ -36,6 +36,7 @@ const HomePage: React.FC = () => {
       items: [
         { name: '見積書アップロード', path: '/estimate/upload' },
         { name: '実行予算作成', path: '/budget/create' },
+        { name: '予算一覧', path: '/budget/list' },
         { name: '案件一覧', path: '/projects' },
       ],
     },
@@ -150,6 +151,20 @@ const HomePage: React.FC = () => {
         <p className="subtitle">次世代の原価管理システム</p>
       </section>
 
+      {/* 12月入力導線カード */}
+      <section className="december-guide-section">
+        <div className="december-guide-card" onClick={() => navigate('/projects')}>
+          <div className="guide-badge">運用中</div>
+          <div className="guide-content">
+            <h3>12月 売上・原価入力</h3>
+            <p className="guide-path">
+              営業部屋 → 案件一覧 → 案件クリック → 詳細で請求/原価入力
+            </p>
+          </div>
+          <div className="guide-arrow">→</div>
+        </div>
+      </section>
+
       <section className="departments-grid">
         {departments.map((dept) => (
           <div
@@ -171,7 +186,10 @@ const HomePage: React.FC = () => {
                 <li
                   key={index}
                   className="card-item"
-                  onClick={(e) => { e.stopPropagation(); navigate(item.path); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(item.path);
+                  }}
                 >
                   <span className="item-dot"></span>
                   <span className="item-name">{item.name}</span>

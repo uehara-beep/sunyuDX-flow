@@ -17,9 +17,6 @@ const SalesRoom: React.FC = () => {
     { name: '見積書アップロード', path: '/estimate/upload' },
     { name: '実行予算作成', path: '/budget/create' },
     { name: '案件一覧', path: '/projects' },
-    { name: '請求書発行', path: '/sales/invoice' },
-    { name: '契約管理', path: '/sales/contract' },
-    { name: '顧客データ', path: '/sales/customers' },
   ];
 
   const recentItems = [
@@ -54,6 +51,18 @@ const SalesRoom: React.FC = () => {
             <div className="stat-glow"></div>
           </div>
         ))}
+      </section>
+
+      {/* 12月入力導線 */}
+      <section className="december-guide">
+        <div className="guide-card" onClick={() => navigate('/projects')}>
+          <div className="guide-badge-small">運用中</div>
+          <div className="guide-text">
+            <strong>12月 売上・原価入力</strong>
+            <span>案件一覧 → 案件クリック → 詳細で入力</span>
+          </div>
+          <span className="guide-arrow-small">→</span>
+        </div>
       </section>
 
       {/* クイックアクション */}
