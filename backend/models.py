@@ -277,6 +277,7 @@ class EstimateLine(Base):
 
     category = Column(String(50))  # labor, subcontract, material, machine, expense (actual only)
     month = Column(String(7))  # YYYY-MM (予算月/原価月)
+    sort_order = Column(Integer, default=0)  # 並び順
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

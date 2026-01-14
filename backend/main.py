@@ -1364,6 +1364,9 @@ async def get_estimate_lines(
         if month:
             lines_query = lines_query.filter(EstimateLineModel.month == month)
 
+        # sort_orderで並び替え
+        lines_query = lines_query.order_by(EstimateLineModel.sort_order, EstimateLineModel.row_no)
+
         lines = lines_query.all()
 
         for line in lines:
@@ -1393,8 +1396,12 @@ async def get_estimate_lines(
                 'note': line.note,
                 'category': line.category,
                 'month': line.month,
+                'sort_order': line.sort_order or 0,
                 'created_at': line.created_at.isoformat() if line.created_at else None
             })
+
+    # sort_orderとrow_noで最終ソート
+    result_lines.sort(key=lambda x: (x['sort_order'], x['row_no'] or 0))
 
     return {
         'status': 'success',
@@ -1407,6 +1414,47 @@ async def get_estimate_lines(
             'month': month
         }
     }
+
+
+class ReorderRequest(BaseModel):
+    line_ids: List[str]
+    sort_orders: List[int]
+
+
+@app.patch("/api/projects/{project_id}/estimate-lines/reorder")
+async def reorder_estimate_lines(
+    project_id: str,
+    request: ReorderRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    見積明細の並び順を更新
+    """
+    if len(request.line_ids) != len(request.sort_orders):
+        raise HTTPException(status_code=400, detail="line_idsとsort_ordersの長さが一致しません")
+
+    try:
+        updated_count = 0
+        for line_id, sort_order in zip(request.line_ids, request.sort_orders):
+            line = db.query(EstimateLineModel).filter_by(id=line_id).first()
+            if line:
+                # プロジェクトの所有確認
+                imp = db.query(EstimateImportModel).filter_by(id=line.import_id).first()
+                if imp and imp.project_id == project_id:
+                    line.sort_order = sort_order
+                    updated_count += 1
+
+        db.commit()
+
+        return {
+            'status': 'success',
+            'message': f'{updated_count}件の並び順を更新しました',
+            'updated_count': updated_count
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"更新エラー: {str(e)}")
 
 
 @app.get("/api/projects/{project_id}/attachments")
