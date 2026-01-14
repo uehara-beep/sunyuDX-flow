@@ -38,6 +38,7 @@ interface EstimateLinesResponse {
   filters: {
     year: number | null;
     kind: string | null;
+    month: string | null;
   };
 }
 
@@ -209,6 +210,7 @@ const ProjectDetail: React.FC = () => {
   const [estimateLines, setEstimateLines] = useState<EstimateLine[]>([]);
   const [estimateYear, setEstimateYear] = useState<number>(new Date().getFullYear());
   const [estimateKind, setEstimateKind] = useState<string>('all'); // all, estimate, budget, actual
+  const [estimateMonth, setEstimateMonth] = useState<string>(''); // YYYY-MM（予算・原価用）
   const [estimateLinesTotal, setEstimateLinesTotal] = useState<number>(0);
 
   // 添付ファイル
@@ -290,7 +292,7 @@ const ProjectDetail: React.FC = () => {
       fetchEstimateLines();
       fetchAttachments();
     }
-  }, [projectId, estimateYear, estimateKind]);
+  }, [projectId, estimateYear, estimateKind, estimateMonth]);
 
   const fetchData = async () => {
     try {
@@ -352,6 +354,10 @@ const ProjectDetail: React.FC = () => {
       let url = `/api/projects/${projectId}/estimate-lines?year=${estimateYear}`;
       if (estimateKind !== 'all') {
         url += `&kind=${estimateKind}`;
+      }
+      // 予算・原価の場合は月フィルタを適用
+      if (estimateMonth && (estimateKind === 'budget' || estimateKind === 'actual')) {
+        url += `&month=${estimateMonth}`;
       }
       const data = await jget<EstimateLinesResponse>(url);
       setEstimateLines(data.lines);
@@ -959,7 +965,13 @@ const ProjectDetail: React.FC = () => {
               </select>
               <select
                 value={estimateKind}
-                onChange={(e) => setEstimateKind(e.target.value)}
+                onChange={(e) => {
+                  setEstimateKind(e.target.value);
+                  // 見積の場合は月フィルタをクリア
+                  if (e.target.value === 'estimate' || e.target.value === 'all') {
+                    setEstimateMonth('');
+                  }
+                }}
                 style={{
                   padding: '0.375rem 0.75rem',
                   border: '1px solid #ddd',
@@ -972,6 +984,21 @@ const ProjectDetail: React.FC = () => {
                 <option value="budget">予算</option>
                 <option value="actual">原価</option>
               </select>
+              {/* 予算・原価の場合は月フィルタを表示 */}
+              {(estimateKind === 'budget' || estimateKind === 'actual') && (
+                <input
+                  type="month"
+                  value={estimateMonth}
+                  onChange={(e) => setEstimateMonth(e.target.value)}
+                  placeholder="対象月"
+                  style={{
+                    padding: '0.375rem 0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              )}
             </div>
             <button
               onClick={() => navigate('/estimate/upload')}

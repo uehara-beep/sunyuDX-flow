@@ -1264,10 +1264,12 @@ async def get_estimate_lines(
     project_id: str,
     year: Optional[int] = None,
     kind: Optional[str] = None,
+    month: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
-    プロジェクトの見積明細を取得（年度・種類フィルタ対応）
+    プロジェクトの見積明細を取得（年度・種類・月フィルタ対応）
+    month: YYYY-MM形式（予算・原価の場合に使用）
     """
     # インポート一覧を取得
     query = db.query(EstimateImportModel).filter_by(
@@ -1282,6 +1284,10 @@ async def get_estimate_lines(
 
         if kind:
             lines_query = lines_query.filter_by(kind=kind)
+
+        # 月フィルタ（DBレベル）
+        if month:
+            lines_query = lines_query.filter(EstimateLineModel.month == month)
 
         lines = lines_query.all()
 
@@ -1322,7 +1328,8 @@ async def get_estimate_lines(
         'total_amount': sum(l['amount'] or 0 for l in result_lines),
         'filters': {
             'year': year,
-            'kind': kind
+            'kind': kind,
+            'month': month
         }
     }
 
