@@ -748,6 +748,7 @@ def parse_sheet(sheet, sheet_name: str) -> dict:
     - 2段ヘッダー対応（r行とr+1行を合成）
     - contains方式のマッチング
     - キー列が2つ以上でヘッダー採用（名称なしでもOK）
+    - 複数ヘッダーセクション対応（1シート内に複数の表がある場合）
     """
     print(f"\n[parse_sheet] シート解析開始: {sheet_name}")
 
@@ -758,16 +759,16 @@ def parse_sheet(sheet, sheet_name: str) -> dict:
         'header_map': {},
         'skip_reason': None,
         'all_candidates': [],  # 検出候補の診断用
+        'sections': [],  # 検出した全セクション情報
     }
 
     # キーカラム（これらが2つ以上あればヘッダー行と判定）
     # nameなしでも qty+unit_price や qty+amount でOK
     key_columns = ['name', 'qty', 'unit_price', 'amount']
 
-    # ヘッダー行を探す（最大50行まで）
-    max_header_search = 50
+    # ヘッダー行を探す（最大100行まで - 複数セクション対応のため拡大）
+    max_header_search = 100
     max_col = min(sheet.max_column or 20, 30)
-    best_header = {'rows': [], 'map': {}, 'key_count': 0, 'total_count': 0}
 
     print(f"  max_col={max_col}, max_header_search={max_header_search}")
 
@@ -779,6 +780,9 @@ def parse_sheet(sheet, sheet_name: str) -> dict:
         except Exception as e:
             print(f"  [警告] 行{row_idx}の読取エラー: {e}")
             row_cache[row_idx] = [''] * max_col
+
+    # ヘッダー候補を全て収集
+    header_candidates = []
 
     for row_idx in range(1, max_header_search + 1):
         values = row_cache.get(row_idx, [])
@@ -804,25 +808,18 @@ def parse_sheet(sheet, sheet_name: str) -> dict:
         if key_count >= 1:
             print(f"  行{row_idx}: キー{key_count}個 {list(header_map.keys())} raw={raw_cells[:3]}")
 
-        # キーカラムが2つ以上ある行をヘッダー候補として採用
-        # 単一行ヘッダーを優先（key_countが同じ場合、2段ヘッダーより単一行を採用）
+        # キーカラムが2つ以上ある行をヘッダー候補として記録
         if key_count >= 2:
-            is_better = (
-                key_count > best_header['key_count'] or
-                (key_count == best_header['key_count'] and len(header_map) > best_header['total_count']) or
-                (key_count == best_header['key_count'] and len(header_map) == best_header['total_count']
-                 and len(best_header['rows']) > 1)  # 2段ヘッダーより単一行を優先
-            )
-            if is_better:
-                best_header = {
-                    'rows': [row_idx],
-                    'map': header_map,
-                    'key_count': key_count,
-                    'total_count': len(header_map)
-                }
+            header_candidates.append({
+                'row': row_idx,
+                'rows': [row_idx],
+                'map': header_map,
+                'key_count': key_count,
+                'total_count': len(header_map),
+                'is_two_row': False
+            })
 
         # 2段ヘッダー試行: 単一行が弱い（キー列1つのみ）場合、次の行と合成
-        # 注意: より多くのキー列を持つ行の方を優先する（タイトル行の誤検出対策）
         elif key_count == 1 and row_idx < max_header_search:
             next_values = row_cache.get(row_idx + 1, [])
             next_map = try_map_header_row(next_values)
@@ -843,26 +840,17 @@ def parse_sheet(sheet, sheet_name: str) -> dict:
             combined_key_count = sum(1 for k in key_columns if k in combined_map)
 
             if combined_key_count >= 2:
-                if combined_key_count > best_header['key_count'] or (
-                    combined_key_count == best_header['key_count'] and len(combined_map) > best_header['total_count']
-                ):
-                    best_header = {
-                        'rows': [row_idx, row_idx + 1],
-                        'map': combined_map,
-                        'key_count': combined_key_count,
-                        'total_count': len(combined_map)
-                    }
+                header_candidates.append({
+                    'row': row_idx,
+                    'rows': [row_idx, row_idx + 1],
+                    'map': combined_map,
+                    'key_count': combined_key_count,
+                    'total_count': len(combined_map),
+                    'is_two_row': True
+                })
 
-    # 最良のヘッダーを採用
-    if best_header['rows']:
-        result['header_row'] = best_header['rows'][0]
-        result['header_rows'] = best_header['rows']
-        result['header_map'] = best_header['map']
-        print(f"  ✓ ヘッダー検出: 行{best_header['rows']}, マップ={list(best_header['map'].keys())}")
-
-    # ヘッダーが見つからない場合
-    if not result['header_row']:
-        # 診断情報を構築
+    # ヘッダー候補がない場合
+    if not header_candidates:
         top_candidates = sorted(result['all_candidates'], key=lambda x: x['key_count'], reverse=True)[:5]
         diag_lines = []
         for c in top_candidates:
@@ -875,149 +863,236 @@ def parse_sheet(sheet, sheet_name: str) -> dict:
             print(f"      {dl}")
         return result
 
-    # 必須カラムチェック緩和: 名称なしでも qty+unit_price or qty+amount でOK
-    has_valid_columns = (
-        'name' in result['header_map'] or
-        'amount' in result['header_map'] or
-        ('qty' in result['header_map'] and 'unit_price' in result['header_map'])
-    )
-    if not has_valid_columns:
-        detected_cols = list(result['header_map'].keys())
-        result['skip_reason'] = f'有効なカラムがありません。検出: {detected_cols}'
-        return result
+    # 連続するヘッダー候補をフィルタ（より多いkey_countを優先）
+    # 同じ行、または連続行のヘッダーは重複除去
+    filtered_headers = []
+    header_candidates.sort(key=lambda x: x['row'])
 
-    # データ行を読み取り
-    empty_row_count = 0
-    max_empty_rows = 5  # 連続5行空なら終了
-
-    for row_idx, row in enumerate(sheet.iter_rows(min_row=result['header_row'] + 1, max_row=1000), start=result['header_row'] + 1):
-        cells = list(row)
-
-        # 名称を取得
-        name = ''
-        if 'name' in result['header_map']:
-            name_idx = result['header_map']['name']
-            if name_idx < len(cells):
-                name = str(cells[name_idx].value or '').strip()
-
-        # 金額を取得（先に取得して終端判定に使用）
-        amount = None
-        if 'amount' in result['header_map']:
-            amount_idx = result['header_map']['amount']
-            if amount_idx < len(cells):
-                amount = normalize_number(cells[amount_idx].value)
-
-        # 空行判定
-        if not name and not amount:
-            empty_row_count += 1
-            if empty_row_count >= max_empty_rows:
+    for candidate in header_candidates:
+        # 既存のヘッダーと重複チェック（行番号が近いか）
+        is_duplicate = False
+        for i, existing in enumerate(filtered_headers):
+            existing_rows = set(existing['rows'])
+            candidate_rows = set(candidate['rows'])
+            # 行が重複するか、連続している場合
+            if existing_rows & candidate_rows or max(existing_rows) + 1 >= min(candidate_rows):
+                # より多くのキー列を持つ方を採用
+                if candidate['key_count'] > existing['key_count'] or (
+                    candidate['key_count'] == existing['key_count'] and
+                    candidate['total_count'] > existing['total_count']
+                ) or (
+                    candidate['key_count'] == existing['key_count'] and
+                    candidate['total_count'] == existing['total_count'] and
+                    not candidate['is_two_row'] and existing['is_two_row']  # 単一行優先
+                ):
+                    filtered_headers[i] = candidate
+                is_duplicate = True
                 break
-            continue
+        if not is_duplicate:
+            filtered_headers.append(candidate)
+
+    print(f"  検出ヘッダー数: {len(filtered_headers)}")
+    for h in filtered_headers:
+        print(f"    行{h['rows']}: キー{h['key_count']}個 {list(h['map'].keys())}")
+
+    # 各セクションからデータを抽出
+    all_lines = []
+
+    for section_idx, header in enumerate(filtered_headers):
+        # 次のヘッダーの行番号を取得（終端判定用）
+        if section_idx + 1 < len(filtered_headers):
+            next_header_row = filtered_headers[section_idx + 1]['row']
         else:
-            empty_row_count = 0
+            next_header_row = 1000  # 最後のセクションは1000行まで
 
-        # 合計行や小計行をスキップ
-        skip_exact = ['計', '小計', '合計', '総合計', '工事費計', '税込合計', '税抜合計',
-                      '本工事費計', '直接工事費計', '諸経費計', '一般管理費', '消費税']
-        if name in skip_exact:
+        header_row = max(header['rows'])  # 2段ヘッダーの場合は下の行
+        header_map = header['map']
+
+        # 必須カラムチェック緩和: 名称なしでも qty+unit_price or qty+amount でOK
+        has_valid_columns = (
+            'name' in header_map or
+            'amount' in header_map or
+            ('qty' in header_map and 'unit_price' in header_map)
+        )
+        if not has_valid_columns:
+            print(f"    セクション{section_idx+1}スキップ: 有効カラムなし {list(header_map.keys())}")
             continue
-        # 「○○計」パターン（ただし3文字以下の短い計のみ）
-        if name.endswith('計') and len(name) <= 4:
-            continue
-        # 消費税行をスキップ
-        if '消費税' in name or '税込' in name and '計' in name:
-            continue
 
-        # 各カラムを取得
-        breakdown = ''
-        if 'breakdown' in result['header_map']:
-            bd_idx = result['header_map']['breakdown']
-            if bd_idx < len(cells):
-                breakdown = str(cells[bd_idx].value or '').strip()
+        section_lines = []
+        empty_row_count = 0
+        # 次のヘッダーがある場合は大きめの許容値、最終セクションは小さめ
+        max_empty_rows = 20 if section_idx + 1 < len(filtered_headers) else 10
 
-        qty = None
-        qty_raw = None
-        if 'qty' in result['header_map']:
-            qty_idx = result['header_map']['qty']
-            if qty_idx < len(cells):
-                qty_raw = cells[qty_idx].value
-                qty = normalize_number(qty_raw)
+        for row_idx, row in enumerate(sheet.iter_rows(min_row=header_row + 1, max_row=next_header_row - 1), start=header_row + 1):
+            cells = list(row)
 
-        unit = ''
-        if 'unit' in result['header_map']:
-            unit_idx = result['header_map']['unit']
-            if unit_idx < len(cells):
-                unit = str(cells[unit_idx].value or '').strip()
+            # 次のヘッダー行に達したら終了
+            if row_idx >= next_header_row:
+                break
 
-        # "一式"/"1式" パターン処理（qty列）
-        qty_raw_str = str(qty_raw or '').strip() if qty_raw else ''
-        if '式' in qty_raw_str or qty_raw_str in ['一式', '1式', '１式']:
-            qty = 1.0
-            if not unit:
-                unit = '式'
+            # 名称を取得
+            name = ''
+            if 'name' in header_map:
+                name_idx = header_map['name']
+                if name_idx < len(cells):
+                    name = str(cells[name_idx].value or '').strip()
 
-        unit_price = None
-        if 'unit_price' in result['header_map']:
-            up_idx = result['header_map']['unit_price']
-            if up_idx < len(cells):
-                unit_price = normalize_number(cells[up_idx].value)
+            # 金額を取得（先に取得して終端判定に使用）
+            amount = None
+            if 'amount' in header_map:
+                amount_idx = header_map['amount']
+                if amount_idx < len(cells):
+                    amount = normalize_number(cells[amount_idx].value)
 
-        note = ''
-        if 'note' in result['header_map']:
-            note_idx = result['header_map']['note']
-            if note_idx < len(cells):
-                note = str(cells[note_idx].value or '').strip()
+            # 単価も確認（金額がなくても単価があればデータ行の可能性）
+            unit_price_val = None
+            if 'unit_price' in header_map:
+                up_idx = header_map['unit_price']
+                if up_idx < len(cells):
+                    unit_price_val = normalize_number(cells[up_idx].value)
 
-        # "一式" パターン処理（name, breakdown, unit列もチェック）
-        # qty が空で、他の列に "一式" があれば qty=1, unit='式'
-        if qty is None:
-            check_texts = [name, breakdown, unit]
-            for txt in check_texts:
-                if txt and ('一式' in txt or '1式' in txt or '１式' in txt):
-                    qty = 1.0
-                    if not unit or unit in ['一式', '1式', '１式']:
-                        unit = '式'
+            # 空行判定（名称・金額・単価いずれもない場合）
+            if not name and not amount and not unit_price_val:
+                empty_row_count += 1
+                if empty_row_count >= max_empty_rows:
                     break
+                continue
+            else:
+                empty_row_count = 0
 
-        # 自動計算（逆算）ロジック強化
-        # 1. amount が空で qty と unit_price があれば計算
-        if amount is None and qty is not None and unit_price is not None:
-            amount = round(qty * unit_price, 0)
+            # 合計行や小計行をスキップ
+            # 名称を正規化（空白除去）してチェック
+            name_normalized = name.replace(' ', '').replace('　', '')
+            skip_exact = ['計', '小計', '合計', '総合計', '工事費計', '税込合計', '税抜合計',
+                          '本工事費計', '直接工事費計', '諸経費計', '一般管理費', '消費税',
+                          '内訳明細書', '明細書']
+            if name_normalized in skip_exact:
+                continue
+            # 「○○計」パターン（ただし6文字以下の短い計のみ）
+            if name_normalized.endswith('計') and len(name_normalized) <= 7:
+                continue
+            # 「○○総計」パターン
+            if '総計' in name_normalized:
+                continue
+            # 消費税行をスキップ
+            if '消費税' in name or '税込' in name and '計' in name:
+                continue
+            # 注意書き行をスキップ（※で始まる）
+            if name.startswith('※') or name.startswith('＊'):
+                continue
+            # ヘッダータイトル行をスキップ（金額・数量・単価が全てない場合の「○○書」）
+            if name_normalized.endswith('書') and not amount and not unit_price_val:
+                continue
+            # カテゴリヘッダー行をスキップ（「○○工事」で金額・単価がない）
+            if (name_normalized.endswith('工事') or name_normalized.endswith('工')) and not amount and not unit_price_val:
+                continue
 
-        # 2. qty が空で amount と unit_price があれば逆算
-        if qty is None and amount is not None and unit_price is not None and unit_price > 0:
-            qty = round(amount / unit_price, 2)  # 小数第2位まで
+            # 各カラムを取得
+            breakdown = ''
+            if 'breakdown' in header_map:
+                bd_idx = header_map['breakdown']
+                if bd_idx < len(cells):
+                    breakdown = str(cells[bd_idx].value or '').strip()
 
-        # 3. unit_price が空で amount と qty があれば逆算
-        if unit_price is None and amount is not None and qty is not None and qty > 0:
-            unit_price = round(amount / qty, 0)  # 単価は整数
+            qty = None
+            qty_raw = None
+            if 'qty' in header_map:
+                qty_idx = header_map['qty']
+                if qty_idx < len(cells):
+                    qty_raw = cells[qty_idx].value
+                    qty = normalize_number(qty_raw)
 
-        # 4. amount だけある場合、qty=1 と仮定して unit_price を逆算
-        if qty is None and unit_price is None and amount is not None and amount > 0:
-            qty = 1.0
-            unit_price = amount
-            if not unit:
-                unit = '式'
+            unit = ''
+            if 'unit' in header_map:
+                unit_idx = header_map['unit']
+                if unit_idx < len(cells):
+                    unit = str(cells[unit_idx].value or '').strip()
 
-        # 最低限nameかamountがあれば行を追加
-        if name or (amount is not None and amount != 0):
-            result['lines'].append({
-                'sheet_name': sheet_name,
-                'row_no': row_idx,
-                'name': name or '（名称なし）',
-                'breakdown': breakdown,
-                'qty': qty,
-                'unit': unit,
-                'unit_price': unit_price,
-                'amount': amount,
-                'note': note,
-            })
+            # "一式"/"1式" パターン処理（qty列）
+            qty_raw_str = str(qty_raw or '').strip() if qty_raw else ''
+            if '式' in qty_raw_str or qty_raw_str in ['一式', '1式', '１式']:
+                qty = 1.0
+                if not unit:
+                    unit = '式'
+
+            unit_price = None
+            if 'unit_price' in header_map:
+                up_idx = header_map['unit_price']
+                if up_idx < len(cells):
+                    unit_price = normalize_number(cells[up_idx].value)
+
+            note = ''
+            if 'note' in header_map:
+                note_idx = header_map['note']
+                if note_idx < len(cells):
+                    note = str(cells[note_idx].value or '').strip()
+
+            # "一式" パターン処理（name, breakdown, unit列もチェック）
+            # qty が空で、他の列に "一式" があれば qty=1, unit='式'
+            if qty is None:
+                check_texts = [name, breakdown, unit]
+                for txt in check_texts:
+                    if txt and ('一式' in txt or '1式' in txt or '１式' in txt):
+                        qty = 1.0
+                        if not unit or unit in ['一式', '1式', '１式']:
+                            unit = '式'
+                        break
+
+            # 自動計算（逆算）ロジック強化
+            # 1. amount が空で qty と unit_price があれば計算
+            if amount is None and qty is not None and unit_price is not None:
+                amount = round(qty * unit_price, 0)
+
+            # 2. qty が空で amount と unit_price があれば逆算
+            if qty is None and amount is not None and unit_price is not None and unit_price > 0:
+                qty = round(amount / unit_price, 2)  # 小数第2位まで
+
+            # 3. unit_price が空で amount と qty があれば逆算
+            if unit_price is None and amount is not None and qty is not None and qty > 0:
+                unit_price = round(amount / qty, 0)  # 単価は整数
+
+            # 4. amount だけある場合、qty=1 と仮定して unit_price を逆算
+            if qty is None and unit_price is None and amount is not None and amount > 0:
+                qty = 1.0
+                unit_price = amount
+                if not unit:
+                    unit = '式'
+
+            # 最低限nameかamountがあれば行を追加
+            if name or (amount is not None and amount != 0):
+                section_lines.append({
+                    'sheet_name': sheet_name,
+                    'row_no': row_idx,
+                    'name': name or '（名称なし）',
+                    'breakdown': breakdown,
+                    'qty': qty,
+                    'unit': unit,
+                    'unit_price': unit_price,
+                    'amount': amount,
+                    'note': note,
+                })
+
+        print(f"    セクション{section_idx+1}(行{header['rows']}): {len(section_lines)}行")
+        result['sections'].append({
+            'header_rows': header['rows'],
+            'header_map': list(header['map'].keys()),
+            'line_count': len(section_lines)
+        })
+        all_lines.extend(section_lines)
+
+    # 結果を設定
+    result['lines'] = all_lines
+    if filtered_headers:
+        # 最初のヘッダーを代表として設定（後方互換）
+        result['header_row'] = filtered_headers[0]['row']
+        result['header_rows'] = filtered_headers[0]['rows']
+        result['header_map'] = filtered_headers[0]['map']
 
     if not result['lines']:
         result['skip_reason'] = 'データ行が見つかりません（ヘッダー行の下にデータがありません）'
         print(f"  ✗ データ行なし: {sheet_name}")
     else:
-        print(f"  ✓ {len(result['lines'])}行のデータを抽出: {sheet_name}")
+        print(f"  ✓ {len(result['lines'])}行のデータを抽出（{len(filtered_headers)}セクション）: {sheet_name}")
 
     return result
 
